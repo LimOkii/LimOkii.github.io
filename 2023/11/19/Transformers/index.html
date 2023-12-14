@@ -20,28 +20,67 @@
     var CONFIG = {"hostname":"limokii.github.io","root":"/","scheme":"Pisces","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":false,"show_result":false,"style":null},"back2top":{"enable":true,"sidebar":false,"scrollpercent":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},"path":"search.xml"};
   </script>
 
-  <meta property="og:type" content="website">
-<meta property="og:title" content="Okii&#39;s bolg">
-<meta property="og:url" content="https://limokii.github.io/index.html">
+  <meta name="description" content="Transformers理解1、模型结构概览大致结构图：  细致结构图：  1234567891011121314模型大致分为Encoder(编码器)和Decoder(解码器)两个部分，分别对应上图中的左右两部分。其中编码器由N个相同的层堆叠在一起(原论文取N&#x3D;6)，每一层又有两个子层第一个子层是一个Multi-Head Attention(多头的自注意机制)第二个子层是一个简单的Feed For">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Transformers">
+<meta property="og:url" content="https://limokii.github.io/2023/11/19/Transformers/index.html">
 <meta property="og:site_name" content="Okii&#39;s bolg">
+<meta property="og:description" content="Transformers理解1、模型结构概览大致结构图：  细致结构图：  1234567891011121314模型大致分为Encoder(编码器)和Decoder(解码器)两个部分，分别对应上图中的左右两部分。其中编码器由N个相同的层堆叠在一起(原论文取N&#x3D;6)，每一层又有两个子层第一个子层是一个Multi-Head Attention(多头的自注意机制)第二个子层是一个简单的Feed For">
 <meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="https://limokii.github.io/2023/11/19/Transformers/transformer3.png">
+<meta property="og:image" content="https://limokii.github.io/2023/11/19/Transformers/transformer.jpg">
+<meta property="og:image" content="https://limokii.github.io/2023/11/19/Transformers/image-20231107193737530.png">
+<meta property="og:image" content="https://limokii.github.io/2023/11/19/Transformers/image-20231107195151986.png">
+<meta property="og:image" content="https://limokii.github.io/2023/11/19/Transformers/image-20231107203101696.png">
+<meta property="og:image" content="https://limokii.github.io/2023/11/19/Transformers/image-20231107203952596.png">
+<meta property="og:image" content="https://limokii.github.io/2023/11/19/Transformers/image-20231108132102982.png">
+<meta property="og:image" content="https://limokii.github.io/2023/11/19/Transformers/image-20231108132854314.png">
+<meta property="og:image" content="https://limokii.github.io/2023/11/19/Transformers/image-20231108132945867.png">
+<meta property="og:image" content="https://limokii.github.io/2023/11/19/Transformers/image-20231108132838428.png">
+<meta property="og:image" content="https://limokii.github.io/2023/11/19/Transformers/scaledotattention.jpg">
+<meta property="og:image" content="https://limokii.github.io/2023/11/19/Transformers/image-20231108133243393.png">
+<meta property="og:image" content="https://limokii.github.io/2023/11/19/Transformers/transformer10.png">
+<meta property="og:image" content="https://limokii.github.io/2023/11/19/Transformers/image-20231108133713377.png">
+<meta property="og:image" content="https://limokii.github.io/2023/11/19/Transformers/transformer11.png">
+<meta property="og:image" content="https://limokii.github.io/2023/11/19/Transformers/image-20231108133742066.png">
+<meta property="og:image" content="https://limokii.github.io/2023/11/19/Transformers/image-20231108133748987.png">
+<meta property="og:image" content="https://limokii.github.io/2023/11/19/Transformers/image-20231108190530270.png">
+<meta property="og:image" content="https://limokii.github.io/2023/11/19/Transformers/image-20231108190539290.png">
+<meta property="og:image" content="https://limokii.github.io/2023/11/19/Transformers/image-20231108190908781.png">
+<meta property="og:image" content="https://limokii.github.io/2023/11/19/Transformers/image-20231108191039102.png">
+<meta property="og:image" content="https://limokii.github.io/2023/11/19/Transformers/image-20231108191052626.png">
+<meta property="og:image" content="https://limokii.github.io/2023/11/19/Transformers/image-20231109125320365.png">
+<meta property="og:image" content="https://limokii.github.io/2023/11/19/Transformers/image-20231109125607481.png">
+<meta property="og:image" content="https://limokii.github.io/2023/11/19/Transformers/image-20231109130306906.png">
+<meta property="og:image" content="https://limokii.github.io/2023/11/19/Transformers/image-20231109131015757.png">
+<meta property="og:image" content="https://limokii.github.io/2023/11/19/Transformers/image-20231109131412290.png">
+<meta property="og:image" content="https://limokii.github.io/2023/11/19/Transformers/image-20231109131850445.png">
+<meta property="og:image" content="https://limokii.github.io/2023/11/19/Transformers/image-20231109132714857.png">
+<meta property="og:image" content="https://limokii.github.io/2023/11/19/Transformers/image-20231109133414985.png">
+<meta property="og:image" content="https://limokii.github.io/2023/11/19/Transformers/image-20231109133425348.png">
+<meta property="og:image" content="https://limokii.github.io/2023/11/19/Transformers/image-20231109133439718.png">
+<meta property="og:image" content="https://limokii.github.io/2023/11/19/Transformers/image-20231109133548546.png">
+<meta property="article:published_time" content="2023-11-19T15:12:11.000Z">
+<meta property="article:modified_time" content="2023-12-14T03:00:12.379Z">
 <meta property="article:author" content="Okii">
+<meta property="article:tag" content="论文">
 <meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://limokii.github.io/2023/11/19/Transformers/transformer3.png">
 
-<link rel="canonical" href="https://limokii.github.io/">
+<link rel="canonical" href="https://limokii.github.io/2023/11/19/Transformers/">
 
 
 <script id="page-configurations">
   // https://hexo.io/docs/variables.html
   CONFIG.page = {
     sidebar: "",
-    isHome : true,
-    isPost : false,
+    isHome : false,
+    isPost : true,
     lang   : 'zh-CN'
   };
 </script>
 
-  <title>Okii's bolg</title>
+  <title>Transformers | Okii's bolg</title>
   
 
 
@@ -178,97 +217,10 @@
         <div class="content-wrap">
           
 
-          <div class="content index posts-expand">
+          <div class="content post posts-expand">
             
-      
-  
-  
-  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
-    <link itemprop="mainEntityOfPage" href="https://limokii.github.io/2023/12/13/Hexo%20+%20Typora%20+%20Github%20%E5%8D%9A%E5%AE%A2%E6%90%AD%E5%BB%BA/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/avatar.jpg">
-      <meta itemprop="name" content="Okii">
-      <meta itemprop="description" content="">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="Okii's bolg">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          
-            <a href="/2023/12/13/Hexo%20+%20Typora%20+%20Github%20%E5%8D%9A%E5%AE%A2%E6%90%AD%E5%BB%BA/" class="post-title-link" itemprop="url">Hexo + Typora + Github 博客搭建</a>
-        </h2>
-
-        <div class="post-meta">
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="fa fa-calendar-o"></i>
-              </span>
-              <span class="post-meta-item-text">发表于</span>
-
-              <time title="创建时间：2023-12-13 23:12:11" itemprop="dateCreated datePublished" datetime="2023-12-13T23:12:11+08:00">2023-12-13</time>
-            </span>
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="fa fa-folder-o"></i>
-              </span>
-              <span class="post-meta-item-text">分类于</span>
-                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-                  <a href="/categories/%E5%8D%9A%E5%AE%A2/" itemprop="url" rel="index"><span itemprop="name">博客</span></a>
-                </span>
-            </span>
-
-          <br>
-            <span class="post-meta-item" title="本文字数">
-              <span class="post-meta-item-icon">
-                <i class="fa fa-file-word-o"></i>
-              </span>
-                <span class="post-meta-item-text">本文字数：</span>
-              <span>1.7k</span>
-            </span>
-            <span class="post-meta-item" title="阅读时长">
-              <span class="post-meta-item-icon">
-                <i class="fa fa-clock-o"></i>
-              </span>
-                <span class="post-meta-item-text">阅读时长 &asymp;</span>
-              <span>3 分钟</span>
-            </span>
-
-        </div>
-      </header>
 
     
-    
-    
-    <div class="post-body" itemprop="articleBody">
-
-      
-          <p>Hexo 是一个高效简洁的静态博客框架，支持 Markdown 写作语法，插件丰富，主题优雅，部署方便。目前已成为多数人博客建站的选择，本博客采用Hexo搭建，Markdown编辑软件为Typora并且部署在Github Page上。</p>
-          <!--noindex-->
-            <div class="post-button">
-              <a class="btn" href="/2023/12/13/Hexo%20+%20Typora%20+%20Github%20%E5%8D%9A%E5%AE%A2%E6%90%AD%E5%BB%BA/#more" rel="contents">
-                阅读全文 &raquo;
-              </a>
-            </div>
-          <!--/noindex-->
-        
-      
-    </div>
-
-    
-    
-    
-      <footer class="post-footer">
-        <div class="post-eof"></div>
-      </footer>
-  </article>
-  
-  
-  
-
-      
   
   
   <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
@@ -284,10 +236,9 @@
       <meta itemprop="name" content="Okii's bolg">
     </span>
       <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          
-            <a href="/2023/11/19/Transformers/" class="post-title-link" itemprop="url">Transformers</a>
-        </h2>
+        <h1 class="post-title" itemprop="name headline">
+          Transformers
+        </h1>
 
         <div class="post-meta">
             <span class="post-meta-item">
@@ -324,7 +275,7 @@
     <div class="post-body" itemprop="articleBody">
 
       
-          <h1 id="Transformers理解"><a href="#Transformers理解" class="headerlink" title="Transformers理解"></a>Transformers理解</h1><h2 id="1、模型结构概览"><a href="#1、模型结构概览" class="headerlink" title="1、模型结构概览"></a>1、模型结构概览</h2><p><strong>大致结构图：</strong></p>
+        <h1 id="Transformers理解"><a href="#Transformers理解" class="headerlink" title="Transformers理解"></a>Transformers理解</h1><h2 id="1、模型结构概览"><a href="#1、模型结构概览" class="headerlink" title="1、模型结构概览"></a>1、模型结构概览</h2><p><strong>大致结构图：</strong></p>
 <p><img src="/2023/11/19/Transformers/transformer3.png" alt="img"></p>
 <p><strong>细致结构图：</strong></p>
 <p><img src="/2023/11/19/Transformers/transformer.jpg" alt="img"></p>
@@ -442,178 +393,53 @@
 <p><img src="/2023/11/19/Transformers/image-20231109133548546.png" alt="image-20231109133548546"></p>
 <p>注意, Decoder的Embedding层和最后输出经过Softmax前的Linear层也是<strong>共享权重</strong>的</p>
 
-      
     </div>
 
     
     
     
+        
+
+<div>
+<ul class="post-copyright">
+  <li class="post-copyright-author">
+    <strong>本文作者： </strong>Okii
+  </li>
+  <li class="post-copyright-link">
+    <strong>本文链接：</strong>
+    <a href="https://limokii.github.io/2023/11/19/Transformers/" title="Transformers">https://limokii.github.io/2023/11/19/Transformers/</a>
+  </li>
+  <li class="post-copyright-license">
+    <strong>版权声明： </strong>本博客所有文章除特别声明外，均采用 <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/" rel="noopener" target="_blank"><i class="fa fa-fw fa-creative-commons"></i>BY-NC-SA</a> 许可协议。转载请注明出处！
+  </li>
+</ul>
+</div>
+
+
       <footer class="post-footer">
-        <div class="post-eof"></div>
-      </footer>
-  </article>
-  
-  
-  
+          <div class="post-tags">
+              <a href="/tags/%E8%AE%BA%E6%96%87/" rel="tag"># 论文</a>
+          </div>
 
-      
-  
-  
-  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
-    <link itemprop="mainEntityOfPage" href="https://limokii.github.io/2023/11/19/first/">
+        
 
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/avatar.jpg">
-      <meta itemprop="name" content="Okii">
-      <meta itemprop="description" content="">
-    </span>
 
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="Okii's bolg">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          
-            <a href="/2023/11/19/first/" class="post-title-link" itemprop="url">first</a>
-        </h2>
-
-        <div class="post-meta">
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="fa fa-calendar-o"></i>
-              </span>
-              <span class="post-meta-item-text">发表于</span>
-
-              <time title="创建时间：2023-11-19 22:55:58" itemprop="dateCreated datePublished" datetime="2023-11-19T22:55:58+08:00">2023-11-19</time>
-            </span>
-
-          <br>
-            <span class="post-meta-item" title="本文字数">
-              <span class="post-meta-item-icon">
-                <i class="fa fa-file-word-o"></i>
-              </span>
-                <span class="post-meta-item-text">本文字数：</span>
-              <span>5</span>
-            </span>
-            <span class="post-meta-item" title="阅读时长">
-              <span class="post-meta-item-icon">
-                <i class="fa fa-clock-o"></i>
-              </span>
-                <span class="post-meta-item-text">阅读时长 &asymp;</span>
-              <span>1 分钟</span>
-            </span>
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-
-      
-          <p>first</p>
-<p><img src="/2023/11/19/first/53962334.jpeg" alt="avatar"></p>
-
-      
+        
+    <div class="post-nav">
+      <div class="post-nav-item">
+    <a href="/2023/11/19/first/" rel="prev" title="first">
+      <i class="fa fa-chevron-left"></i> first
+    </a></div>
+      <div class="post-nav-item">
+    <a href="/2023/12/13/Hexo%20+%20Typora%20+%20Github%20%E5%8D%9A%E5%AE%A2%E6%90%AD%E5%BB%BA/" rel="next" title="Hexo + Typora + Github 博客搭建">
+      Hexo + Typora + Github 博客搭建 <i class="fa fa-chevron-right"></i>
+    </a></div>
     </div>
-
-    
-    
-    
-      <footer class="post-footer">
-        <div class="post-eof"></div>
       </footer>
+    
   </article>
   
   
-  
-
-      
-  
-  
-  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
-    <link itemprop="mainEntityOfPage" href="https://limokii.github.io/2023/11/17/hello-world/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/avatar.jpg">
-      <meta itemprop="name" content="Okii">
-      <meta itemprop="description" content="">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="Okii's bolg">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          
-            <a href="/2023/11/17/hello-world/" class="post-title-link" itemprop="url">Hello World</a>
-        </h2>
-
-        <div class="post-meta">
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="fa fa-calendar-o"></i>
-              </span>
-              <span class="post-meta-item-text">发表于</span>
-
-              <time title="创建时间：2023-11-17 12:39:38" itemprop="dateCreated datePublished" datetime="2023-11-17T12:39:38+08:00">2023-11-17</time>
-            </span>
-
-          <br>
-            <span class="post-meta-item" title="本文字数">
-              <span class="post-meta-item-icon">
-                <i class="fa fa-file-word-o"></i>
-              </span>
-                <span class="post-meta-item-text">本文字数：</span>
-              <span>367</span>
-            </span>
-            <span class="post-meta-item" title="阅读时长">
-              <span class="post-meta-item-icon">
-                <i class="fa fa-clock-o"></i>
-              </span>
-                <span class="post-meta-item-text">阅读时长 &asymp;</span>
-              <span>1 分钟</span>
-            </span>
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-
-      
-          <p>Welcome to <a target="_blank" rel="noopener" href="https://hexo.io/">Hexo</a>! This is your very first post. Check <a target="_blank" rel="noopener" href="https://hexo.io/docs/">documentation</a> for more info. If you get any problems when using Hexo, you can find the answer in <a target="_blank" rel="noopener" href="https://hexo.io/docs/troubleshooting.html">troubleshooting</a> or you can ask me on <a target="_blank" rel="noopener" href="https://github.com/hexojs/hexo/issues">GitHub</a>.</p>
-<h2 id="Quick-Start"><a href="#Quick-Start" class="headerlink" title="Quick Start"></a>Quick Start</h2><h3 id="Create-a-new-post"><a href="#Create-a-new-post" class="headerlink" title="Create a new post"></a>Create a new post</h3><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">$ hexo new <span class="string">&quot;My New Post&quot;</span></span><br></pre></td></tr></table></figure>
-
-<p>More info: <a target="_blank" rel="noopener" href="https://hexo.io/docs/writing.html">Writing</a></p>
-<h3 id="Run-server"><a href="#Run-server" class="headerlink" title="Run server"></a>Run server</h3><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">$ hexo server</span><br></pre></td></tr></table></figure>
-
-<p>More info: <a target="_blank" rel="noopener" href="https://hexo.io/docs/server.html">Server</a></p>
-<h3 id="Generate-static-files"><a href="#Generate-static-files" class="headerlink" title="Generate static files"></a>Generate static files</h3><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">$ hexo generate</span><br></pre></td></tr></table></figure>
-
-<p>More info: <a target="_blank" rel="noopener" href="https://hexo.io/docs/generating.html">Generating</a></p>
-<h3 id="Deploy-to-remote-sites"><a href="#Deploy-to-remote-sites" class="headerlink" title="Deploy to remote sites"></a>Deploy to remote sites</h3><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">$ hexo deploy</span><br></pre></td></tr></table></figure>
-
-<p>More info: <a target="_blank" rel="noopener" href="https://hexo.io/docs/one-command-deployment.html">Deployment</a></p>
-
-      
-    </div>
-
-    
-    
-    
-      <footer class="post-footer">
-        <div class="post-eof"></div>
-      </footer>
-  </article>
-  
-  
-  
-
-
   
 
 
@@ -666,6 +492,7 @@
 
       <!--noindex-->
       <div class="post-toc-wrap sidebar-panel">
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#Transformers%E7%90%86%E8%A7%A3"><span class="nav-text">Transformers理解</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#1%E3%80%81%E6%A8%A1%E5%9E%8B%E7%BB%93%E6%9E%84%E6%A6%82%E8%A7%88"><span class="nav-text">1、模型结构概览</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#2%E3%80%81%E6%A8%A1%E5%9E%8B%E7%9A%84%E8%BE%93%E5%85%A5%E9%83%A8%E5%88%86"><span class="nav-text">2、模型的输入部分</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#2-1-Eebedding%E5%B1%82"><span class="nav-text">2.1 Eebedding层</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#2-2-%E4%BD%8D%E7%BD%AE%E7%BC%96%E7%A0%81"><span class="nav-text">2.2 位置编码</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#2-3-Encoder-%E5%92%8C-Decoder-%E5%8C%85%E5%90%AB%E7%9A%84%E8%BE%93%E5%85%A5%E6%A8%A1%E5%9D%97"><span class="nav-text">2.3 Encoder 和 Decoder 包含的输入模块</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#3%E3%80%81Encoder%E7%BC%96%E7%A0%81%E5%99%A8"><span class="nav-text">3、Encoder编码器</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#3-1-Encoder"><span class="nav-text">3.1 Encoder</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#3-2-EncoderLayer"><span class="nav-text">3.2 EncoderLayer</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#3-3-Atention"><span class="nav-text">3.3 Atention</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#3-4-MultiHead-Attention"><span class="nav-text">3.4 MultiHead-Attention</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#3-5-Position-wise-Feed-Forward-neural-network"><span class="nav-text">3.5 Position-wise Feed Forward neural network</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#3-6-Layer-Norm"><span class="nav-text">3.6 Layer Norm</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#3-7-Residual"><span class="nav-text">3.7 Residual</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#4%E3%80%81Decoder%E7%BC%96%E7%A0%81%E5%99%A8"><span class="nav-text">4、Decoder编码器</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#4-1-Encoder-Decoder-Attention-Cross-Attention"><span class="nav-text">4.1 Encoder-Decoder Attention(Cross Attention)</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#4-2-Outputs"><span class="nav-text">4.2 Outputs</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#4-3-Masked-Multi-Head-Attention"><span class="nav-text">4.3 Masked Multi-Head Attention</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#5%E3%80%81%E6%9C%80%E7%BB%88%E8%BE%93%E5%87%BA"><span class="nav-text">5、最终输出</span></a></li></ol></li></ol></div>
       </div>
       <!--/noindex-->
 

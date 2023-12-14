@@ -1,0 +1,528 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 7.0.0">
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+<link rel="stylesheet" href="/lib/font-awesome/css/font-awesome.min.css">
+
+<script id="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"limokii.github.io","root":"/","scheme":"Pisces","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":false,"show_result":false,"style":null},"back2top":{"enable":true,"sidebar":false,"scrollpercent":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},"path":"search.xml"};
+  </script>
+
+  <meta name="description" content="Hexo 是一个高效简洁的静态博客框架，支持 Markdown 写作语法，插件丰富，主题优雅，部署方便。目前已成为多数人博客建站的选择，本博客采用Hexo搭建，Markdown编辑软件为Typora并且部署在Github Page上。">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Hexo + Typora + Github 博客搭建">
+<meta property="og:url" content="https://limokii.github.io/2023/12/13/Hexo%20+%20Typora%20+%20Github%20%E5%8D%9A%E5%AE%A2%E6%90%AD%E5%BB%BA/index.html">
+<meta property="og:site_name" content="Okii&#39;s bolg">
+<meta property="og:description" content="Hexo 是一个高效简洁的静态博客框架，支持 Markdown 写作语法，插件丰富，主题优雅，部署方便。目前已成为多数人博客建站的选择，本博客采用Hexo搭建，Markdown编辑软件为Typora并且部署在Github Page上。">
+<meta property="og:locale" content="zh_CN">
+<meta property="article:published_time" content="2023-12-13T15:12:11.000Z">
+<meta property="article:modified_time" content="2023-12-14T03:40:31.956Z">
+<meta property="article:author" content="Okii">
+<meta property="article:tag" content="博客">
+<meta name="twitter:card" content="summary">
+
+<link rel="canonical" href="https://limokii.github.io/2023/12/13/Hexo%20+%20Typora%20+%20Github%20%E5%8D%9A%E5%AE%A2%E6%90%AD%E5%BB%BA/">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome : false,
+    isPost : true,
+    lang   : 'zh-CN'
+  };
+</script>
+
+  <title>Hexo + Typora + Github 博客搭建 | Okii's bolg</title>
+  
+
+
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="container use-motion">
+    <div class="headband"></div>
+
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="切换导航栏">
+      <span class="toggle-line toggle-line-first"></span>
+      <span class="toggle-line toggle-line-middle"></span>
+      <span class="toggle-line toggle-line-last"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <span class="logo-line-before"><i></i></span>
+      <h1 class="site-title">Okii's bolg</h1>
+      <span class="logo-line-after"><i></i></span>
+    </a>
+      <p class="site-subtitle" itemprop="description">仅作为记录自己的学习过程</p>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+        <i class="fa fa-search fa-fw fa-lg"></i>
+    </div>
+  </div>
+</div>
+
+
+
+
+<nav class="site-nav">
+  <ul id="menu" class="menu">
+        <li class="menu-item menu-item-home">
+
+    <a href="/" rel="section"><i class="fa fa-fw fa-home"></i>首页</a>
+
+  </li>
+        <li class="menu-item menu-item-tags">
+
+    <a href="/tags/" rel="section"><i class="fa fa-fw fa-tags"></i>标签<span class="badge">2</span></a>
+
+  </li>
+        <li class="menu-item menu-item-categories">
+
+    <a href="/categories/" rel="section"><i class="fa fa-fw fa-th"></i>分类<span class="badge">1</span></a>
+
+  </li>
+        <li class="menu-item menu-item-archives">
+
+    <a href="/archives/" rel="section"><i class="fa fa-fw fa-archive"></i>归档<span class="badge">4</span></a>
+
+  </li>
+      <li class="menu-item menu-item-search">
+        <a role="button" class="popup-trigger"><i class="fa fa-search fa-fw"></i>搜索
+        </a>
+      </li>
+  </ul>
+</nav>
+
+
+
+  <div class="search-pop-overlay">
+    <div class="popup search-popup">
+        <div class="search-header">
+  <span class="search-icon">
+    <i class="fa fa-search"></i>
+  </span>
+  <div class="search-input-container">
+    <input autocomplete="off" autocapitalize="off"
+           placeholder="搜索..." spellcheck="false"
+           type="search" class="search-input">
+  </div>
+  <span class="popup-btn-close">
+    <i class="fa fa-times-circle"></i>
+  </span>
+</div>
+<div id="search-result">
+  <div id="no-result">
+    <i class="fa fa-spinner fa-pulse fa-5x fa-fw"></i>
+  </div>
+</div>
+
+    </div>
+  </div>
+
+</div>
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+
+
+    <main class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+
+          <div class="content post posts-expand">
+            
+
+    
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="https://limokii.github.io/2023/12/13/Hexo%20+%20Typora%20+%20Github%20%E5%8D%9A%E5%AE%A2%E6%90%AD%E5%BB%BA/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.jpg">
+      <meta itemprop="name" content="Okii">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Okii's bolg">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          Hexo + Typora + Github 博客搭建
+        </h1>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+
+              <time title="创建时间：2023-12-13 23:12:11" itemprop="dateCreated datePublished" datetime="2023-12-13T23:12:11+08:00">2023-12-13</time>
+            </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/%E5%8D%9A%E5%AE%A2/" itemprop="url" rel="index"><span itemprop="name">博客</span></a>
+                </span>
+            </span>
+
+          <br>
+            <span class="post-meta-item" title="本文字数">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-file-word-o"></i>
+              </span>
+                <span class="post-meta-item-text">本文字数：</span>
+              <span>1.7k</span>
+            </span>
+            <span class="post-meta-item" title="阅读时长">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-clock-o"></i>
+              </span>
+                <span class="post-meta-item-text">阅读时长 &asymp;</span>
+              <span>3 分钟</span>
+            </span>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        <p>Hexo 是一个高效简洁的静态博客框架，支持 Markdown 写作语法，插件丰富，主题优雅，部署方便。目前已成为多数人博客建站的选择，本博客采用Hexo搭建，Markdown编辑软件为Typora并且部署在Github Page上。</p>
+<span id="more"></span>
+
+<h3 id="1、Hexo-环境准备"><a href="#1、Hexo-环境准备" class="headerlink" title="1、Hexo 环境准备"></a>1、Hexo 环境准备</h3><p><strong>Hexo 依赖于 <a target="_blank" rel="noopener" href="https://nodejs.org/zh-cn/">Node.js</a> 和 <a target="_blank" rel="noopener" href="https://git-scm.com/download/">git</a>，所以在安装 Hexo 之前先确保已安装了这两项应用。本教程不再赘述这两项应用的安装教程，可自行查看网上的其他教程</strong></p>
+<p>在命令行中通过 npm 来安装 Hexo：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">$ npm install -g hexo-cli</span><br></pre></td></tr></table></figure>
+
+<p><code>-g</code> 表示全局安装，会将 Hexo 命令加入环境变量中，以使其在 cmd 下有效。</p>
+<p>新建博客目录，然后在该路径下执行初始化命令：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">$ hexo init</span><br></pre></td></tr></table></figure>
+
+<p>执行完毕后，将会生成以下文件结构：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><span class="line">.</span><br><span class="line">├── node_modules       //依赖安装目录</span><br><span class="line">├── scaffolds          //模板文件夹，新建的文章将会从此目录下的文件中继承格式</span><br><span class="line">|   ├── draft.md         //草稿模板</span><br><span class="line">|   ├── page.md          //页面模板</span><br><span class="line">|   └── post.md          //文章模板</span><br><span class="line">├── source             //资源文件夹，用于放置图片、数据、文章等资源</span><br><span class="line">|   └── _posts           //文章目录</span><br><span class="line">├── themes             //主题文件夹</span><br><span class="line">|   └── landscape        //默认主题</span><br><span class="line">├── .gitignore         //指定不纳入git版本控制的文件</span><br><span class="line">├── _config.yml        //站点配置文件</span><br><span class="line">├── db.json            </span><br><span class="line">├── package.json</span><br><span class="line">└── package-lock.json</span><br></pre></td></tr></table></figure>
+
+<p>在根目录下执行如下命令启动 hexo 的内置 Web 服务器</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">$ hexo server</span><br></pre></td></tr></table></figure>
+
+<p>该命令将会调用 Markdown 引擎解析项目中的博客内容生成网页资源，资源将会存于内存中，所以用户执行完命令之后在项目文件夹中是找不到相关的 Web 资源目录的。该命令还会启动一个简易的 Web 服务器用于提供对内存中网页资源的访问（工作机制类似于 webpack-dev-server），Web 服务器默认监听 4000 端口，用户可在浏览器中通过地址 <code>localhost:4000</code> 访问博客。</p>
+<p>此外，可以通过添加命令行参数来支持高级用法：</p>
+<ul>
+<li>当 4000 端口已被其他应用占用时，可以添加 <code>-p</code> &#x2F; <code>--port</code> 参数来设置 Web 服务监听的端口号，如<code>hexo s -p 8000</code></li>
+</ul>
+<h3 id="2、Hexo-新建文章"><a href="#2、Hexo-新建文章" class="headerlink" title="2、Hexo 新建文章"></a>2、Hexo 新建文章</h3><p>1、在Hexo根目录下，使用<code>git</code>输入：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">$ hexo new &quot;New&quot;</span><br></pre></td></tr></table></figure>
+
+<p>就创建了一篇新的博文，博文名字为<code>New</code></p>
+<p>2、在Hexo目录下的<code>source</code>&#x2F;<code>_posts</code>文件夹内，就会出现刚刚创建的博文：<code>New.md</code></p>
+<p><strong>注：对于已经写好的.md文件，可以直接复制到<code>source</code>&#x2F;<code>_posts</code>文件夹内</strong></p>
+<h3 id="3、Hexo-博客引擎编译"><a href="#3、Hexo-博客引擎编译" class="headerlink" title="3、Hexo 博客引擎编译"></a>3、Hexo 博客引擎编译</h3><p>在写完博文后（<code>.md</code>文件），回到Hexo根目录，使用<code>git</code>输入：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">$ hexo g</span><br></pre></td></tr></table></figure>
+
+<p>即可编译完成，如果有错误，可以再尝试输入：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">$ hexo clean</span><br><span class="line">$ hexo g</span><br></pre></td></tr></table></figure>
+
+<p><strong>Hexo更多的基础配置可查看官方文档</strong></p>
+<h3 id="4、Hexo-使用主题"><a href="#4、Hexo-使用主题" class="headerlink" title="4、Hexo 使用主题"></a>4、Hexo 使用主题</h3><p>Hexo 中切换主题的方式非常简单，只需要将主题文件拷贝至根目录下的 <code>themes</code> 文件夹中， 然后修改 <code>_config.yml</code> 文件中的 <code>theme</code> 字段即可。本博客使用的是Next主题，Next 作为一款符合广大程序员审美的主题，还是有着较高的出场率的。</p>
+<p>在根目录下执行以下命令下载主题文件：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">$ git clone https://github.com/theme-next/hexo-theme-next.git themes/next</span><br></pre></td></tr></table></figure>
+
+<p>也可以在 <a target="_blank" rel="noopener" href="https://github.com/theme-next/hexo-theme-next/releases">NexT 版本发布页面</a> 手动下载然后解压到根目录下的 <code>theme</code> 文件夹下，并将文件夹命名为 <code>next</code> 。</p>
+<p>打开根目录下的站点配置文件，将 <code>theme</code> 字段的值修改为 <code>next</code>。</p>
+<figure class="highlight yml"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="attr">theme:</span> <span class="string">next</span></span><br></pre></td></tr></table></figure>
+
+<p>这个时候刷新浏览器页面并不会发生变化，需要重启服务器并刷新才能使主题生效。</p>
+<p>如果重启服务器仍无效，尝试使用 <code>hexo clean</code> 清除缓存</p>
+<p>Next 默认主题风格为 <code>Muse</code>，用户可以在主题配置文件中修改 <code>scheme</code> 字段以选择自己喜欢的主题风格：</p>
+<p>本博客采用的<code>Pisces</code></p>
+<figure class="highlight yml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># Schemes</span></span><br><span class="line"><span class="comment">#scheme: Muse</span></span><br><span class="line"><span class="comment">#scheme: Mist</span></span><br><span class="line"><span class="attr">scheme:</span> <span class="string">Pisces</span></span><br><span class="line"><span class="comment">#scheme: Gemini</span></span><br></pre></td></tr></table></figure>
+
+<h3 id="5、hello"><a href="#5、hello" class="headerlink" title="5、hello"></a>5、hello</h3>
+    </div>
+
+    
+    
+    
+        
+
+<div>
+<ul class="post-copyright">
+  <li class="post-copyright-author">
+    <strong>本文作者： </strong>Okii
+  </li>
+  <li class="post-copyright-link">
+    <strong>本文链接：</strong>
+    <a href="https://limokii.github.io/2023/12/13/Hexo%20+%20Typora%20+%20Github%20%E5%8D%9A%E5%AE%A2%E6%90%AD%E5%BB%BA/" title="Hexo + Typora + Github 博客搭建">https://limokii.github.io/2023/12/13/Hexo + Typora + Github 博客搭建/</a>
+  </li>
+  <li class="post-copyright-license">
+    <strong>版权声明： </strong>本博客所有文章除特别声明外，均采用 <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/" rel="noopener" target="_blank"><i class="fa fa-fw fa-creative-commons"></i>BY-NC-SA</a> 许可协议。转载请注明出处！
+  </li>
+</ul>
+</div>
+
+
+      <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/tags/%E5%8D%9A%E5%AE%A2/" rel="tag"># 博客</a>
+          </div>
+
+        
+
+
+        
+    <div class="post-nav">
+      <div class="post-nav-item">
+    <a href="/2023/11/19/Transformers/" rel="prev" title="Transformers">
+      <i class="fa fa-chevron-left"></i> Transformers
+    </a></div>
+      <div class="post-nav-item"></div>
+    </div>
+      </footer>
+    
+  </article>
+  
+  
+  
+
+
+
+          </div>
+          
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let { activeClass } = CONFIG.comments;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      let activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      let commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+        </div>
+          
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          文章目录
+        </li>
+        <li class="sidebar-nav-overview">
+          站点概览
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-3"><a class="nav-link" href="#1%E3%80%81Hexo-%E7%8E%AF%E5%A2%83%E5%87%86%E5%A4%87"><span class="nav-text">1、Hexo 环境准备</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#2%E3%80%81Hexo-%E6%96%B0%E5%BB%BA%E6%96%87%E7%AB%A0"><span class="nav-text">2、Hexo 新建文章</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#3%E3%80%81Hexo-%E5%8D%9A%E5%AE%A2%E5%BC%95%E6%93%8E%E7%BC%96%E8%AF%91"><span class="nav-text">3、Hexo 博客引擎编译</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#4%E3%80%81Hexo-%E4%BD%BF%E7%94%A8%E4%B8%BB%E9%A2%98"><span class="nav-text">4、Hexo 使用主题</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#5%E3%80%81hello"><span class="nav-text">5、hello</span></a></li></ol></div>
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+    <img class="site-author-image" itemprop="image" alt="Okii"
+      src="/images/avatar.jpg">
+  <p class="site-author-name" itemprop="name">Okii</p>
+  <div class="site-description" itemprop="description"></div>
+</div>
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/archives/">
+        
+          <span class="site-state-item-count">4</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+            <a href="/categories/">
+          
+        <span class="site-state-item-count">1</span>
+        <span class="site-state-item-name">分类</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+            <a href="/tags/">
+          
+        <span class="site-state-item-count">2</span>
+        <span class="site-state-item-name">标签</span></a>
+      </div>
+  </nav>
+</div>
+  <div class="links-of-author motion-element">
+      <span class="links-of-author-item">
+        <a href="https://github.com/LimOkii" title="GitHub → https:&#x2F;&#x2F;github.com&#x2F;LimOkii" rel="noopener" target="_blank"><i class="fa fa-fw fa-github"></i>GitHub</a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="mailto:lyfei1126@gmail.com" title="E-Mail → mailto:lyfei1126@gmail.com" rel="noopener" target="_blank"><i class="fa fa-fw fa-envelope"></i>E-Mail</a>
+      </span>
+  </div>
+
+
+
+      </div>
+
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        
+
+        
+
+<div class="copyright">
+  
+  &copy; 
+  <span itemprop="copyrightYear">2023</span>
+  <span class="with-love">
+    <i class="fa fa-user"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">Okii</span>
+</div>
+  <div class="powered-by">由 <a href="https://hexo.io/" class="theme-link" rel="noopener" target="_blank">Hexo</a> & <a href="https://pisces.theme-next.org/" class="theme-link" rel="noopener" target="_blank">NexT.Pisces</a> 强力驱动
+  </div>
+
+        
+
+
+
+
+
+
+
+
+      </div>
+    </footer>
+  </div>
+
+  
+  <script src="/lib/anime.min.js"></script>
+  <script src="/lib/velocity/velocity.min.js"></script>
+  <script src="/lib/velocity/velocity.ui.min.js"></script>
+
+<script src="/js/utils.js"></script>
+
+<script src="/js/motion.js"></script>
+
+
+<script src="/js/schemes/pisces.js"></script>
+
+
+<script src="/js/next-boot.js"></script>
+
+
+
+
+  
+
+
+
+
+  
+<script src="/js/local-search.js"></script>
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+
+</body>
+</html>
