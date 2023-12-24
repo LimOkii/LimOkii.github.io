@@ -54,7 +54,7 @@
 
 
 
-<h1 id="5、Github部署"><a href="#5、Github部署" class="headerlink" title="5、Github部署"></a>5、Github部署</h1><h2 id="5-1-连接Github"><a href="#5-1-连接Github" class="headerlink" title="5.1 连接Github"></a>5.1 连接Github</h2><ul>
+<h1 id="5、Github-部署"><a href="#5、Github-部署" class="headerlink" title="5、Github 部署"></a>5、Github 部署</h1><h2 id="5-1-连接Github"><a href="#5-1-连接Github" class="headerlink" title="5.1 连接Github"></a>5.1 连接Github</h2><ul>
 <li>博客项目根目录   右键  –&gt; <code>Git Bash Here</code>  <strong>设置用户名和邮箱</strong></li>
 </ul>
 <figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">$ git config --global user.name &quot;GitHub的用户名&quot;</span><br><span class="line">$ git config --global user.email &quot;GitHub的邮箱&quot;</span><br></pre></td></tr></table></figure>
@@ -87,7 +87,7 @@
 <ul>
 <li>创建后默认自动启用 <code>HTTPS</code>，博客地址为：<code>https://用户名.github.io</code></li>
 </ul>
-<h2 id="5-3-部署Hexo"><a href="#5-3-部署Hexo" class="headerlink" title="5.3 部署Hexo"></a>5.3 部署Hexo</h2><ul>
+<h2 id="5-3-部署到Github"><a href="#5-3-部署到Github" class="headerlink" title="5.3 部署到Github"></a>5.3 部署到Github</h2><ul>
 <li><p>本地博客测试成功后，就是上传到 <code>GitHub</code> 进行部署，使其能够在网络上访问</p>
 </li>
 <li><p>首先安装 <code>hexo-deployer-git</code>：</p>
@@ -100,7 +100,30 @@
 
 <p>​	完成后项目根目录<code>Git bash</code>中运行 <code>hexo d</code> 将网站上传部署到 <code>GitHub Pages</code>。</p>
 <p>​	这时访问我们的 <code>https://用户名.github.io</code> 就可以看到 <code>Hexo</code> 网站了</p>
-<h1 id="6、Typora编写博客"><a href="#6、Typora编写博客" class="headerlink" title="6、Typora编写博客"></a>6、Typora编写博客</h1>]]></content>
+<h1 id="6、Typora-编写博客"><a href="#6、Typora-编写博客" class="headerlink" title="6、Typora 编写博客"></a>6、Typora 编写博客</h1><p>用<code>Typora</code>编写<code>md</code>文件，利用<code>Hexo</code>解析时存在图片无法显示的问题</p>
+<p>关于这个配置使得<code>md文件-&gt;hexo生成-&gt;所见即所得</code>,我花费了1个晚上的时间才搞明白，主要是别的博客质量太次了，要么照搬，要么方法矛盾，<code>bug</code>了好久</p>
+<p>直接上方法</p>
+<h2 id="6-1-config-yml配置"><a href="#6-1-config-yml配置" class="headerlink" title="6.1 _config.yml配置"></a>6.1 _config.yml配置</h2><ul>
+<li>将项目根目录下的<code>_config.yml</code> 文件中的<code>post_asset_folder</code> 选项设为 <code>true</code></li>
+</ul>
+<p>​		该操作的作用就是在使用<code>hexo new xxx</code>指令新建博文时，在相同路径下同步创建一个<code>xxx</code>文件夹，而<code>xxx</code>文件夹的作用就是用来存放图片资源；<br>​		就我个人而言，我偏好于直接在<code>source\_posts</code>文件夹下新建<code>md</code>文件，而不是通过<code>hexo new xxx</code>指令；<br>那么直接新建<code>xxx.md</code>再新建<code>xxx</code>文件夹，这种操作的最终效果和使用<code>hexo new xxx</code>指令新建博文的效果一样吗？经过实测，是一样的。</p>
+<h2 id="6-2-Typora图像配置"><a href="#6-2-Typora图像配置" class="headerlink" title="6.2 Typora图像配置"></a>6.2 Typora图像配置</h2><p>​		一般来说，大家会现在<code>Typora</code>里写好<code>md</code>格式的博客，然后通过<code>hexo clean</code>、<code>hexo g</code>、<code>hexo s</code>进行一下本地测试，确认无误后再发布到远端。</p>
+<p>​		暂且不说<code>hexo</code>博客的图片插入是个问题，我相信当初单纯利用<code>Typora</code>做笔记时，图片文件的管理就让很多人头疼过，<code>Typora</code>官方似乎也意识到这个问题，所以偏好设置中图像是专门的一项，提供了很多选择。</p>
+<p>​		我相信大多数同学写<code>md</code>时的图片很多可能是直接截图或者在其他地方copy的，然后在<code>Typora</code>中直接粘贴就ok了。但是这么做之前最好<code>Typora</code>插入图片时采取何种操作配置好，否则<code>md</code>文件和图片相隔十万八千里，后续一旦移动<code>md</code>文件图片就识别不出来，相信大家用过<code>Typora</code>都深有体会。<br>​		所以接下来讲一下<code>Typora</code>如何设置。直接给结论：</p>
+<p>​        左上角 <code>文件-&gt;偏好设置-&gt;图像</code></p>
+<img src="/2023/12/13/Hexo%20+%20Typora%20+%20Github%20%E5%8D%9A%E5%AE%A2%E6%90%AD%E5%BB%BA/image-20231224153713398.png" alt="image-20231224153713398" style="zoom: 50%;">
+
+<p>​		框里的路径是：<code>./$&#123;filename&#125;</code>。<code>./</code>表示当前文件夹，<code>$&#123;filename&#125;</code>表示当前文件名。这么设置的好处：</p>
+<p>​		1、图片资源文件夹有了；</p>
+<p>​		2、而且是同名文件夹！（6.1中的文件夹其实不用手动添加了）</p>
+<p>​		这么设置的结果就是：想写篇博客，在<code>source\_posts</code>文件夹下新建<code>xxx.md</code>文件，写着写着需要插一张图，从别处复制，然后在<code>Typora</code>中直接粘贴，<code>bling!</code>图片资源文件夹自动搞定，并不用关心什么文件夹，只管专注于<code>md</code>文件即可。</p>
+<h2 id="6-3-插件下载"><a href="#6-3-插件下载" class="headerlink" title="6.3 插件下载"></a>6.3 插件下载</h2><p>这个插件的不同版本可能会有不同的影响，我最终成功解决问题的版本是用如下命令下载的：</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">$ cnpm install https://github.com/CodeFalling/hexo-asset-image --save</span><br></pre></td></tr></table></figure>
+
+<p>为什么需要这么插件呢？</p>
+<p>因为我们虽然在<code>source\_posts</code>文件夹下写了<code>md</code>文件，也有了图片资源文件夹存了图片，但从我们前面<code>Typora</code>中的设置不难知道，实际上<code>md</code>文件中的图片路径都是相对路径<code>（./$&#123;filename&#125;）</code>。而实际网上看到的博文显然不是<code>md</code>文件，而是<code>html</code>文件，从<code>md</code>到<code>html</code>的转变就是<code>Hexo</code>帮我们做的，还记得<code>hexo g</code>命令吗？就是干这个的。转换后的<code>html</code>文件在<code>public</code>目录下，路径是通过日期指示的。</p>
+<p><strong>路径转换</strong>就是该插件的作用：根据<code>md</code>图片的相对路径，给出<code>html</code>中图片的绝对路径。</p>
+]]></content>
       <categories>
         <category>博客</category>
       </categories>
@@ -111,7 +134,7 @@
   <entry>
     <title>Huggingface 服务器端镜像下载</title>
     <url>/2023/12/18/Huggingface%20%E6%9C%8D%E5%8A%A1%E5%99%A8%E7%AB%AF%E9%95%9C%E5%83%8F%E4%B8%8B%E8%BD%BD/</url>
-    <content><![CDATA[<p>使用<strong>Huggingface 官方提供的 <a href="https://hf-mirror.com/docs/huggingface_hub/guides/download#download-from-the-cli">*<em><code>huggingface-cli</code>*</em> </a>命令行工具在服务器端镜像下载权重或文件</strong></p>
+    <content><![CDATA[<p>使用<strong>Huggingface 官方提供的 <a href="https://hf-mirror.com/docs/huggingface_hub/guides/download#download-from-the-cli">*<em><code>huggingface-cli</code>*</em> </a>命令行工具在服务器端镜像下载权重或文件</strong>。</p>
 <span id="more"></span>
 
 <h2 id="1、安装依赖"><a href="#1、安装依赖" class="headerlink" title="1、安装依赖"></a>1、安装依赖</h2><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">$ pip install -U huggingface_hub</span><br></pre></td></tr></table></figure>
@@ -142,6 +165,24 @@
       <tags>
         <tag>Huggingface</tag>
       </tags>
+  </entry>
+  <entry>
+    <title>Hello World</title>
+    <url>/2023/11/17/hello-world/</url>
+    <content><![CDATA[<p>Welcome to <a href="https://hexo.io/">Hexo</a>! This is your very first post. Check <a href="https://hexo.io/docs/">documentation</a> for more info. If you get any problems when using Hexo, you can find the answer in <a href="https://hexo.io/docs/troubleshooting.html">troubleshooting</a> or you can ask me on <a href="https://github.com/hexojs/hexo/issues">GitHub</a>.</p>
+<h2 id="Quick-Start"><a href="#Quick-Start" class="headerlink" title="Quick Start"></a>Quick Start</h2><h3 id="Create-a-new-post"><a href="#Create-a-new-post" class="headerlink" title="Create a new post"></a>Create a new post</h3><figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">$ hexo new <span class="string">&quot;My New Post&quot;</span></span><br></pre></td></tr></table></figure>
+
+<p>More info: <a href="https://hexo.io/docs/writing.html">Writing</a></p>
+<h3 id="Run-server"><a href="#Run-server" class="headerlink" title="Run server"></a>Run server</h3><figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">$ hexo server</span><br></pre></td></tr></table></figure>
+
+<p>More info: <a href="https://hexo.io/docs/server.html">Server</a></p>
+<h3 id="Generate-static-files"><a href="#Generate-static-files" class="headerlink" title="Generate static files"></a>Generate static files</h3><figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">$ hexo generate</span><br></pre></td></tr></table></figure>
+
+<p>More info: <a href="https://hexo.io/docs/generating.html">Generating</a></p>
+<h3 id="Deploy-to-remote-sites"><a href="#Deploy-to-remote-sites" class="headerlink" title="Deploy to remote sites"></a>Deploy to remote sites</h3><figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">$ hexo deploy</span><br></pre></td></tr></table></figure>
+
+<p>More info: <a href="https://hexo.io/docs/one-command-deployment.html">Deployment</a></p>
+]]></content>
   </entry>
   <entry>
     <title>first</title>
@@ -274,23 +315,5 @@
       <tags>
         <tag>论文</tag>
       </tags>
-  </entry>
-  <entry>
-    <title>Hello World</title>
-    <url>/2023/11/17/hello-world/</url>
-    <content><![CDATA[<p>Welcome to <a href="https://hexo.io/">Hexo</a>! This is your very first post. Check <a href="https://hexo.io/docs/">documentation</a> for more info. If you get any problems when using Hexo, you can find the answer in <a href="https://hexo.io/docs/troubleshooting.html">troubleshooting</a> or you can ask me on <a href="https://github.com/hexojs/hexo/issues">GitHub</a>.</p>
-<h2 id="Quick-Start"><a href="#Quick-Start" class="headerlink" title="Quick Start"></a>Quick Start</h2><h3 id="Create-a-new-post"><a href="#Create-a-new-post" class="headerlink" title="Create a new post"></a>Create a new post</h3><figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">$ hexo new <span class="string">&quot;My New Post&quot;</span></span><br></pre></td></tr></table></figure>
-
-<p>More info: <a href="https://hexo.io/docs/writing.html">Writing</a></p>
-<h3 id="Run-server"><a href="#Run-server" class="headerlink" title="Run server"></a>Run server</h3><figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">$ hexo server</span><br></pre></td></tr></table></figure>
-
-<p>More info: <a href="https://hexo.io/docs/server.html">Server</a></p>
-<h3 id="Generate-static-files"><a href="#Generate-static-files" class="headerlink" title="Generate static files"></a>Generate static files</h3><figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">$ hexo generate</span><br></pre></td></tr></table></figure>
-
-<p>More info: <a href="https://hexo.io/docs/generating.html">Generating</a></p>
-<h3 id="Deploy-to-remote-sites"><a href="#Deploy-to-remote-sites" class="headerlink" title="Deploy to remote sites"></a>Deploy to remote sites</h3><figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">$ hexo deploy</span><br></pre></td></tr></table></figure>
-
-<p>More info: <a href="https://hexo.io/docs/one-command-deployment.html">Deployment</a></p>
-]]></content>
   </entry>
 </search>
