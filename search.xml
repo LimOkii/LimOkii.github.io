@@ -1,48 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <search>
   <entry>
-    <title>Huggingface 服务器端镜像下载</title>
-    <url>/2023/12/18/Huggingface%20%E6%9C%8D%E5%8A%A1%E5%99%A8%E7%AB%AF%E9%95%9C%E5%83%8F%E4%B8%8B%E8%BD%BD/</url>
-    <content><![CDATA[<p>使用<strong>huggingface 官方提供的 <a href="https://hf-mirror.com/docs/huggingface_hub/guides/download#download-from-the-cli">*<em><code>huggingface-cli</code>*</em> </a>命令行工具</strong></p>
-<span id="more"></span>
-
-<h2 id="1、安装依赖"><a href="#1、安装依赖" class="headerlink" title="1、安装依赖"></a>1、安装依赖</h2><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">$ pip install -U huggingface_hub</span><br></pre></td></tr></table></figure>
-
-
-
-<h2 id="2、基本命令示例"><a href="#2、基本命令示例" class="headerlink" title="2、基本命令示例"></a>2、基本命令示例</h2><ul>
-<li>在.bashrc文件中添加下面这条镜像配置</li>
-</ul>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">$ export HF_ENDPOINT=https://hf-mirror.com</span><br></pre></td></tr></table></figure>
-
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">$ huggingface-cli download --resume-download --local-dir-use-symlinks False THUDM/chatglm2-6b --local-dir chatglm2-6b</span><br></pre></td></tr></table></figure>
-
-<ul>
-<li><code>download</code>: Hugging Face CLI 的下载命令。</li>
-<li><code>--resume-download</code>: 如果下载中断，该选项会尝试继续下载而不是重新开始。</li>
-<li><code>--local-dir-use-symlinks False</code>: 该选项指示不使用符号链接。符号链接是一种链接到其他文件或目录的特殊类型的文件，这里指示不使用它们。</li>
-<li><code>THUDM/chatglm2-6b</code>: 模型的名称或模型 ID。在这里，它下载的是 <code>THUDM/chatglm2-6b</code>。</li>
-<li><code>--local-dir chatglm2-6b</code>: 该选项指定本地保存模型的目录名称，即 <code>chatglm2-6b</code>。</li>
-</ul>
-<h2 id="3、下载需要登录的模型（Gated-Model）"><a href="#3、下载需要登录的模型（Gated-Model）" class="headerlink" title="3、下载需要登录的模型（Gated Model）"></a>3、下载需要登录的模型（Gated Model）</h2><p>请添加<code>--token hf_***</code>参数，其中<code>hf_***</code>是 <em>access token</em>，请在<a href="https://huggingface.co/settings/tokens">huggingface官网这里</a>获取。示例：</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">$ huggingface-cli download --token hf_*** --resume-download --local-dir-use-symlinks False meta-llama/Llama-2-7b-hf --local-dir Llama-2-7b-hf</span><br></pre></td></tr></table></figure>
-
-]]></content>
-      <categories>
-        <category>服务器命令</category>
-      </categories>
-      <tags>
-        <tag>Huggingface</tag>
-      </tags>
-  </entry>
-  <entry>
-    <title>first</title>
-    <url>/2023/11/19/first/</url>
-    <content><![CDATA[<p>first</p>
-<p><img src="/2023/11/19/first/53962334.jpeg" alt="avatar"></p>
-]]></content>
-  </entry>
-  <entry>
     <title>Hexo + Typora + Github 博客搭建</title>
     <url>/2023/12/13/Hexo%20+%20Typora%20+%20Github%20%E5%8D%9A%E5%AE%A2%E6%90%AD%E5%BB%BA/</url>
     <content><![CDATA[<p>Hexo 是一个高效简洁的静态博客框架，支持 Markdown 写作语法，插件丰富，主题优雅，部署方便。目前已成为多数人博客建站的选择，本博客采用Hexo搭建，Markdown编辑软件为Typora并且部署在Github Page上。</p>
@@ -149,6 +107,48 @@
       <tags>
         <tag>博客</tag>
       </tags>
+  </entry>
+  <entry>
+    <title>Huggingface 服务器端镜像下载</title>
+    <url>/2023/12/18/Huggingface%20%E6%9C%8D%E5%8A%A1%E5%99%A8%E7%AB%AF%E9%95%9C%E5%83%8F%E4%B8%8B%E8%BD%BD/</url>
+    <content><![CDATA[<p>使用<strong>Huggingface 官方提供的 <a href="https://hf-mirror.com/docs/huggingface_hub/guides/download#download-from-the-cli">*<em><code>huggingface-cli</code>*</em> </a>命令行工具在服务器端镜像下载权重或文件</strong></p>
+<span id="more"></span>
+
+<h2 id="1、安装依赖"><a href="#1、安装依赖" class="headerlink" title="1、安装依赖"></a>1、安装依赖</h2><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">$ pip install -U huggingface_hub</span><br></pre></td></tr></table></figure>
+
+
+
+<h2 id="2、基本命令示例"><a href="#2、基本命令示例" class="headerlink" title="2、基本命令示例"></a>2、基本命令示例</h2><ul>
+<li>在.bashrc文件中添加下面这条镜像配置</li>
+</ul>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">$ export HF_ENDPOINT=https://hf-mirror.com</span><br></pre></td></tr></table></figure>
+
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">$ huggingface-cli download --resume-download --local-dir-use-symlinks False THUDM/chatglm2-6b --local-dir chatglm2-6b</span><br></pre></td></tr></table></figure>
+
+<ul>
+<li><code>download</code>: Hugging Face CLI 的下载命令。</li>
+<li><code>--resume-download</code>: 如果下载中断，该选项会尝试继续下载而不是重新开始。</li>
+<li><code>--local-dir-use-symlinks False</code>: 该选项指示不使用符号链接。符号链接是一种链接到其他文件或目录的特殊类型的文件，这里指示不使用它们。</li>
+<li><code>THUDM/chatglm2-6b</code>: 模型的名称或模型 ID。在这里，它下载的是 <code>THUDM/chatglm2-6b</code>。</li>
+<li><code>--local-dir chatglm2-6b</code>: 该选项指定本地保存模型的目录名称，即 <code>chatglm2-6b</code>。</li>
+</ul>
+<h2 id="3、下载需要登录的模型（Gated-Model）"><a href="#3、下载需要登录的模型（Gated-Model）" class="headerlink" title="3、下载需要登录的模型（Gated Model）"></a>3、下载需要登录的模型（Gated Model）</h2><p>请添加<code>--token hf_***</code>参数，其中<code>hf_***</code>是 <em>access token</em>，请在<a href="https://huggingface.co/settings/tokens">huggingface官网这里</a>获取。示例：</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">$ huggingface-cli download --token hf_*** --resume-download --local-dir-use-symlinks False meta-llama/Llama-2-7b-hf --local-dir Llama-2-7b-hf</span><br></pre></td></tr></table></figure>
+
+]]></content>
+      <categories>
+        <category>服务器命令</category>
+      </categories>
+      <tags>
+        <tag>Huggingface</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>first</title>
+    <url>/2023/11/19/first/</url>
+    <content><![CDATA[<p>first</p>
+<p><img src="/2023/11/19/first/53962334.jpeg" alt="avatar"></p>
+]]></content>
   </entry>
   <entry>
     <title>Transformers</title>
