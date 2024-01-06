@@ -1,0 +1,556 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 7.0.0">
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/logo.jpg">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/logo.jpg">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/logo.jpg">
+  <link rel="mask-icon" href="/images/logo.jpg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+<link rel="stylesheet" href="/lib/font-awesome/css/font-awesome.min.css">
+
+<script id="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"limokii.github.io","root":"/","scheme":"Pisces","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":false,"show_result":false,"style":null},"back2top":{"enable":true,"sidebar":false,"scrollpercent":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},"path":"search.xml"};
+  </script>
+
+  <meta name="description" content="Leetcode刷题记录——数组篇">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Leetcode 数组篇">
+<meta property="og:url" content="https://limokii.github.io/2024/01/06/%E6%95%B0%E7%BB%84%E7%AF%87/index.html">
+<meta property="og:site_name" content="Okii&#39;s blog">
+<meta property="og:description" content="Leetcode刷题记录——数组篇">
+<meta property="og:locale" content="zh_CN">
+<meta property="article:published_time" content="2024-01-06T15:12:11.000Z">
+<meta property="article:modified_time" content="2024-01-06T05:13:38.077Z">
+<meta property="article:author" content="Okii">
+<meta property="article:tag" content="Leetcode">
+<meta property="article:tag" content="数组">
+<meta name="twitter:card" content="summary">
+
+<link rel="canonical" href="https://limokii.github.io/2024/01/06/%E6%95%B0%E7%BB%84%E7%AF%87/">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome : false,
+    isPost : true,
+    lang   : 'zh-CN'
+  };
+</script>
+
+  <title>Leetcode 数组篇 | Okii's blog</title>
+  
+
+
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="container use-motion">
+    <div class="headband"></div>
+
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="切换导航栏">
+      <span class="toggle-line toggle-line-first"></span>
+      <span class="toggle-line toggle-line-middle"></span>
+      <span class="toggle-line toggle-line-last"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <span class="logo-line-before"><i></i></span>
+      <h1 class="site-title">Okii's blog</h1>
+      <span class="logo-line-after"><i></i></span>
+    </a>
+      <p class="site-subtitle" itemprop="description">仅作为记录自己的学习过程</p>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+        <i class="fa fa-search fa-fw fa-lg"></i>
+    </div>
+  </div>
+</div>
+
+
+
+
+<nav class="site-nav">
+  <ul id="menu" class="menu">
+        <li class="menu-item menu-item-home">
+
+    <a href="/" rel="section"><i class="fa fa-fw fa-home"></i>首页</a>
+
+  </li>
+        <li class="menu-item menu-item-tags">
+
+    <a href="/tags/" rel="section"><i class="fa fa-fw fa-tags"></i>标签<span class="badge">7</span></a>
+
+  </li>
+        <li class="menu-item menu-item-categories">
+
+    <a href="/categories/" rel="section"><i class="fa fa-fw fa-th"></i>分类<span class="badge">5</span></a>
+
+  </li>
+        <li class="menu-item menu-item-archives">
+
+    <a href="/archives/" rel="section"><i class="fa fa-fw fa-archive"></i>归档<span class="badge">8</span></a>
+
+  </li>
+      <li class="menu-item menu-item-search">
+        <a role="button" class="popup-trigger"><i class="fa fa-search fa-fw"></i>搜索
+        </a>
+      </li>
+  </ul>
+</nav>
+
+
+
+  <div class="search-pop-overlay">
+    <div class="popup search-popup">
+        <div class="search-header">
+  <span class="search-icon">
+    <i class="fa fa-search"></i>
+  </span>
+  <div class="search-input-container">
+    <input autocomplete="off" autocapitalize="off"
+           placeholder="搜索..." spellcheck="false"
+           type="search" class="search-input">
+  </div>
+  <span class="popup-btn-close">
+    <i class="fa fa-times-circle"></i>
+  </span>
+</div>
+<div id="search-result">
+  <div id="no-result">
+    <i class="fa fa-spinner fa-pulse fa-5x fa-fw"></i>
+  </div>
+</div>
+
+    </div>
+  </div>
+
+</div>
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+
+
+    <main class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+
+          <div class="content post posts-expand">
+            
+
+    
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="https://limokii.github.io/2024/01/06/%E6%95%B0%E7%BB%84%E7%AF%87/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.jpg">
+      <meta itemprop="name" content="Okii">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Okii's blog">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          Leetcode 数组篇
+        </h1>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+
+              <time title="创建时间：2024-01-06 23:12:11" itemprop="dateCreated datePublished" datetime="2024-01-06T23:12:11+08:00">2024-01-06</time>
+            </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/Leetcode-%E5%88%B7%E9%A2%98/" itemprop="url" rel="index"><span itemprop="name">Leetcode 刷题</span></a>
+                </span>
+            </span>
+
+          <br>
+            <span class="post-meta-item" title="本文字数">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-file-word-o"></i>
+              </span>
+                <span class="post-meta-item-text">本文字数：</span>
+              <span>3.1k</span>
+            </span>
+            <span class="post-meta-item" title="阅读时长">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-clock-o"></i>
+              </span>
+                <span class="post-meta-item-text">阅读时长 &asymp;</span>
+              <span>6 分钟</span>
+            </span>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        <p>Leetcode刷题记录——数组篇</p>
+<span id="more"></span>
+
+<h2 id="Leetcode704-二分查找"><a href="#Leetcode704-二分查找" class="headerlink" title="Leetcode704  二分查找"></a>Leetcode704  二分查找</h2><p><strong>使用二分查找的前提条件：</strong></p>
+<ul>
+<li>数组有序</li>
+<li>数组内无重复元素（因为一旦有重复元素，使用二分查找法返回的元素下标可能不是唯一的）</li>
+</ul>
+<p>二分查找涉及的很多的边界条件，逻辑比较简单，但就是写不好。例如到底是 <code>while(left &lt; right)</code> 还是 <code>while(left &lt;= right)</code>，到底是<code>right = middle</code>呢，还是要<code>right = middle - 1</code>？</p>
+<p>因此要遵循<strong>循环不变量原则</strong>，就是在while寻找中每一次边界的处理都要坚持根据区间的定义来操作</p>
+<p>区间的定义一般为两种，左闭右闭即<code>[left, right]</code>，或者左闭右开即<code>[left, right)</code>，本题采用左闭右闭的写法</p>
+<p>区间的定义这就决定了二分法的代码应该如何写，<strong>因为定义target在[left, right]区间，所以有如下两点：</strong></p>
+<ul>
+<li><code>while (left &lt;= right)</code> 要使用 <code>&lt;=</code> ，因为<code>left == right</code>是有意义的，在<code>[left, right]</code>区间是合法的，所以使用 <code>&lt;=</code></li>
+<li><code>if (nums[middle] &gt; target)</code> <code>right</code> 要赋值为 <code>middle - 1</code>，因为当前这个<code>nums[middle]</code>一定不是<code>target</code>，那么接下来要查找的左区间结束下标位置就是 <code>middle - 1</code></li>
+</ul>
+<p><strong>Python代码如下：</strong></p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">class</span> <span class="title class_">Solution</span>:</span><br><span class="line">    <span class="keyword">def</span> <span class="title function_">search</span>(<span class="params">self, nums: <span class="type">List</span>[<span class="built_in">int</span>], target: <span class="built_in">int</span></span>) -&gt; <span class="built_in">int</span>:</span><br><span class="line">        left = <span class="number">0</span></span><br><span class="line">        right = <span class="built_in">len</span>(nums) - <span class="number">1</span></span><br><span class="line">        <span class="keyword">while</span> left &lt;= right:</span><br><span class="line">            middle = left + (right - left) // <span class="number">2</span></span><br><span class="line">            <span class="keyword">if</span> target &lt; nums[middle]:</span><br><span class="line">                right = middle -<span class="number">1</span></span><br><span class="line">            <span class="keyword">elif</span> target &gt; nums[middle]:</span><br><span class="line">                left = middle + <span class="number">1</span></span><br><span class="line">            <span class="keyword">else</span>:</span><br><span class="line">                <span class="keyword">return</span> middle</span><br><span class="line">        <span class="keyword">return</span> -<span class="number">1</span></span><br></pre></td></tr></table></figure>
+
+
+
+
+
+<h2 id="Leetcode27-移除元素"><a href="#Leetcode27-移除元素" class="headerlink" title="Leetcode27  移除元素"></a>Leetcode27  移除元素</h2><p>双指针法（快慢指针法）： <strong>通过一个快指针和慢指针在一个for循环下完成两个for循环的工作。</strong></p>
+<p>定义快慢指针</p>
+<ul>
+<li>快指针：寻找新数组的元素 ，新数组就是不含有目标元素的数组</li>
+<li>慢指针：指向更新 新数组下标的位置</li>
+</ul>
+<p>也就是快指针去寻找符合条件的元素，慢指针用来更新需要返回的数组，这样在一次遍历中，即可完成数组的更新</p>
+<p><strong>Python代码如下：</strong></p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">class</span> <span class="title class_">Solution</span>:</span><br><span class="line">    <span class="keyword">def</span> <span class="title function_">removeElement</span>(<span class="params">self, nums: <span class="type">List</span>[<span class="built_in">int</span>], val: <span class="built_in">int</span></span>) -&gt; <span class="built_in">int</span>:</span><br><span class="line">        slow = <span class="number">0</span></span><br><span class="line">        fast = <span class="number">0</span></span><br><span class="line">        length = <span class="built_in">len</span>(nums)</span><br><span class="line">        <span class="keyword">while</span> fast &lt; length:</span><br><span class="line">            <span class="keyword">if</span> nums[fast] != val:</span><br><span class="line">                nums[slow] = nums[fast]</span><br><span class="line">                slow = slow + <span class="number">1</span></span><br><span class="line">            fast = fast + <span class="number">1</span></span><br><span class="line">        <span class="keyword">return</span> slow</span><br></pre></td></tr></table></figure>
+
+
+
+
+
+<h2 id="Leetcode977-有序数组的平方"><a href="#Leetcode977-有序数组的平方" class="headerlink" title="Leetcode977 有序数组的平方"></a>Leetcode977 有序数组的平方</h2><p>数组其实是有序的， 只不过负数平方之后可能成为最大数了。</p>
+<p>那么数组平方的最大值就在数组的两端，不是最左边就是最右边，不可能是中间。</p>
+<p>此时可以考虑双指针法了，<code>head</code>指向起始位置，<code>tail</code>指向终止位置。</p>
+<p>定义一个新数组<code>res</code>，和<code>nums</code>数组一样的大小，让<code>index</code>指向<code>res</code>数组终止位置。</p>
+<p><strong>Python代码如下：</strong></p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">class</span> <span class="title class_">Solution</span>:</span><br><span class="line">    <span class="keyword">def</span> <span class="title function_">sortedSquares</span>(<span class="params">self, nums: <span class="type">List</span>[<span class="built_in">int</span>]</span>) -&gt; <span class="type">List</span>[<span class="built_in">int</span>]:</span><br><span class="line">        length = <span class="built_in">len</span>(nums)</span><br><span class="line">        head = <span class="number">0</span></span><br><span class="line">        tail = length - <span class="number">1</span></span><br><span class="line">        index = length - <span class="number">1</span></span><br><span class="line">        res = [<span class="built_in">float</span>(<span class="string">&#x27;inf&#x27;</span>)] * <span class="built_in">len</span>(nums)</span><br><span class="line">        <span class="keyword">while</span> head &lt;= tail:</span><br><span class="line">            <span class="keyword">if</span> <span class="built_in">abs</span>(nums[head]) &gt; <span class="built_in">abs</span>(nums[tail]):</span><br><span class="line">                res[index] = nums[head] * nums[head]</span><br><span class="line">                index -= <span class="number">1</span></span><br><span class="line">                head += <span class="number">1</span></span><br><span class="line">            <span class="keyword">else</span>:</span><br><span class="line">                res[index] = nums[tail] * nums[tail]</span><br><span class="line">                index -= <span class="number">1</span></span><br><span class="line">                tail -= <span class="number">1</span></span><br><span class="line">        <span class="keyword">return</span> res</span><br></pre></td></tr></table></figure>
+
+
+
+
+
+<h2 id="Leetcode209-长度最小的子数组"><a href="#Leetcode209-长度最小的子数组" class="headerlink" title="Leetcode209 长度最小的子数组"></a>Leetcode209 长度最小的子数组</h2><p>首先想到的暴力法，思路很简单，两个<code>for</code>循环，找到所有的连续子组合，如果该组合<code>&gt;=target</code>则记录长度，最终返回长度最小的记录即可</p>
+<p>这道题可以用<strong>滑动窗口</strong>的思想来解决：</p>
+<p>在暴力解法中，是一个<code>for</code>循环为滑动窗口的起始位置，一个<code>for</code>循环为滑动窗口的终止位置，用两个<code>for</code>循环 完成了一个不断搜索区间的过程</p>
+<p>那么滑动窗口如何用一个<code>for</code>循环来完成这个操作呢？</p>
+<p>首先要思考，如果用一个<code>for</code>循环，那么应该表示滑动窗口的起始位置，还是终止位置？</p>
+<p>如果只用一个<code>for</code>循环来表示滑动窗口的起始位置，那么如何遍历剩下的终止位置？</p>
+<p>此时难免再次陷入暴力解法的怪圈</p>
+<p>所以 如果只用一个<code>for</code>循环，那么这个循环的索引，一定是表示滑动窗口的终止位置</p>
+<p><strong>Python代码如下：</strong></p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">class</span> <span class="title class_">Solution</span>:</span><br><span class="line">    <span class="keyword">def</span> <span class="title function_">minSubArrayLen</span>(<span class="params">self, target: <span class="built_in">int</span>, nums: <span class="type">List</span>[<span class="built_in">int</span>]</span>) -&gt; <span class="built_in">int</span>:</span><br><span class="line">        <span class="built_in">sum</span> = <span class="number">0</span></span><br><span class="line">        start = <span class="number">0</span></span><br><span class="line">        end = <span class="number">0</span></span><br><span class="line">        length = <span class="built_in">len</span>(nums)</span><br><span class="line">        max_len = <span class="built_in">float</span>(<span class="string">&#x27;inf&#x27;</span>)</span><br><span class="line">        <span class="keyword">for</span> end <span class="keyword">in</span> <span class="built_in">range</span>(length):</span><br><span class="line">            <span class="built_in">sum</span> = <span class="built_in">sum</span> + nums[end]</span><br><span class="line">            <span class="keyword">while</span> <span class="built_in">sum</span> &gt;= target:</span><br><span class="line">                <span class="comment"># 如果此时窗口内的和&gt;=target,那么试着剔除窗口的第一个元素，看是否还成立</span></span><br><span class="line">                <span class="comment"># 但操作前,需要先记录此时成立情况下的窗口长度</span></span><br><span class="line">                res = end - start + <span class="number">1</span></span><br><span class="line">                <span class="keyword">if</span> res &lt; max_len:</span><br><span class="line">                    max_len = res</span><br><span class="line">                <span class="built_in">sum</span> = <span class="built_in">sum</span> - nums[start]</span><br><span class="line">                start += <span class="number">1</span></span><br><span class="line"></span><br><span class="line">        <span class="keyword">if</span> max_len == inf:</span><br><span class="line">            <span class="keyword">return</span> <span class="number">0</span></span><br><span class="line">        <span class="keyword">else</span>:</span><br><span class="line">            <span class="keyword">return</span> max_len</span><br></pre></td></tr></table></figure>
+
+
+
+
+
+<h2 id="Leetcode59-螺旋矩阵II"><a href="#Leetcode59-螺旋矩阵II" class="headerlink" title="Leetcode59 螺旋矩阵II"></a>Leetcode59 螺旋矩阵II</h2><p>这道题考察对代码的掌控能力，仍然会遇到复杂的边界问题，坚持<strong>循环不变量原则</strong></p>
+<p>模拟顺时针画矩阵的过程:</p>
+<ul>
+<li>填充上行从左到右</li>
+<li>填充右列从上到下</li>
+<li>填充下行从右到左</li>
+<li>填充左列从下到上</li>
+</ul>
+<p>要处理好边界问题，就要坚持<strong>循环不变量原则</strong></p>
+<p>本题采用<strong>左闭右开</strong>的写法</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">class</span> <span class="title class_">Solution</span>:</span><br><span class="line">    <span class="keyword">def</span> <span class="title function_">generateMatrix</span>(<span class="params">self, n: <span class="built_in">int</span></span>) -&gt; <span class="type">List</span>[<span class="type">List</span>[<span class="built_in">int</span>]]:</span><br><span class="line">        <span class="comment"># 先创建 n * n 的全0矩阵</span></span><br><span class="line">        nums = [[<span class="number">0</span>] * n <span class="keyword">for</span> _ <span class="keyword">in</span> <span class="built_in">range</span>(n)]</span><br><span class="line">        x = <span class="number">0</span></span><br><span class="line">        y = <span class="number">0</span></span><br><span class="line">        <span class="comment"># 偶数n能走完整圈,奇数n会留中间一个空</span></span><br><span class="line">        loop = n // <span class="number">2</span></span><br><span class="line">        <span class="comment"># n为奇数时, 矩阵的中间位置为nums[mid][mid]</span></span><br><span class="line">        mid = n // <span class="number">2</span></span><br><span class="line">        <span class="comment"># 用来给矩阵中每一个空格赋值</span></span><br><span class="line">        count = <span class="number">1</span></span><br><span class="line">        offset = <span class="number">1</span></span><br><span class="line">        <span class="keyword">while</span> loop:</span><br><span class="line">            <span class="comment"># 从左到右</span></span><br><span class="line">            <span class="keyword">for</span> i <span class="keyword">in</span> <span class="built_in">range</span>(x, n - offset):</span><br><span class="line">                nums[x][i] = count</span><br><span class="line">                count += <span class="number">1</span></span><br><span class="line">            <span class="comment"># 从上到下</span></span><br><span class="line">            <span class="keyword">for</span> i <span class="keyword">in</span> <span class="built_in">range</span>(y, n - offset):</span><br><span class="line">                nums[i][n - offset] = count</span><br><span class="line">                count += <span class="number">1</span></span><br><span class="line">            <span class="comment"># 从右到左</span></span><br><span class="line">            <span class="keyword">for</span> i <span class="keyword">in</span> <span class="built_in">range</span>(n - offset, x, -<span class="number">1</span>):</span><br><span class="line">                nums[n - offset][i] = count</span><br><span class="line">                count += <span class="number">1</span></span><br><span class="line">            <span class="comment"># 从下到上</span></span><br><span class="line">            <span class="keyword">for</span> i <span class="keyword">in</span> <span class="built_in">range</span>(n - offset, y, -<span class="number">1</span>):</span><br><span class="line">                nums[i][y] = count</span><br><span class="line">                count += <span class="number">1</span></span><br><span class="line">            x += <span class="number">1</span></span><br><span class="line">            y += <span class="number">1</span></span><br><span class="line">            offset += <span class="number">1</span></span><br><span class="line">            loop -= <span class="number">1</span></span><br><span class="line">        <span class="keyword">if</span> n % <span class="number">2</span> != <span class="number">0</span>:</span><br><span class="line">            nums[mid][mid] = count</span><br><span class="line">        <span class="keyword">return</span> nums</span><br></pre></td></tr></table></figure>
+
+
+    </div>
+
+    
+    
+    
+        
+
+<div>
+<ul class="post-copyright">
+  <li class="post-copyright-author">
+    <strong>本文作者： </strong>Okii
+  </li>
+  <li class="post-copyright-link">
+    <strong>本文链接：</strong>
+    <a href="https://limokii.github.io/2024/01/06/%E6%95%B0%E7%BB%84%E7%AF%87/" title="Leetcode 数组篇">https://limokii.github.io/2024/01/06/数组篇/</a>
+  </li>
+  <li class="post-copyright-license">
+    <strong>版权声明： </strong>本博客所有文章除特别声明外，均采用 <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/" rel="noopener" target="_blank"><i class="fa fa-fw fa-creative-commons"></i>BY-NC-SA</a> 许可协议。转载请注明出处！
+  </li>
+</ul>
+</div>
+
+
+      <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/tags/Leetcode/" rel="tag"># Leetcode</a>
+              <a href="/tags/%E6%95%B0%E7%BB%84/" rel="tag"># 数组</a>
+          </div>
+
+        
+
+
+        
+    <div class="post-nav">
+      <div class="post-nav-item">
+    <a href="/2023/12/31/LoRA%E5%BE%AE%E8%B0%83%E5%AE%9E%E6%88%98/" rel="prev" title="LoRA微调实战">
+      <i class="fa fa-chevron-left"></i> LoRA微调实战
+    </a></div>
+      <div class="post-nav-item"></div>
+    </div>
+      </footer>
+    
+  </article>
+  
+  
+  
+
+
+
+          </div>
+          
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let { activeClass } = CONFIG.comments;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      let activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      let commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+        </div>
+          
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          文章目录
+        </li>
+        <li class="sidebar-nav-overview">
+          站点概览
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#Leetcode704-%E4%BA%8C%E5%88%86%E6%9F%A5%E6%89%BE"><span class="nav-text">Leetcode704  二分查找</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Leetcode27-%E7%A7%BB%E9%99%A4%E5%85%83%E7%B4%A0"><span class="nav-text">Leetcode27  移除元素</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Leetcode977-%E6%9C%89%E5%BA%8F%E6%95%B0%E7%BB%84%E7%9A%84%E5%B9%B3%E6%96%B9"><span class="nav-text">Leetcode977 有序数组的平方</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Leetcode209-%E9%95%BF%E5%BA%A6%E6%9C%80%E5%B0%8F%E7%9A%84%E5%AD%90%E6%95%B0%E7%BB%84"><span class="nav-text">Leetcode209 长度最小的子数组</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Leetcode59-%E8%9E%BA%E6%97%8B%E7%9F%A9%E9%98%B5II"><span class="nav-text">Leetcode59 螺旋矩阵II</span></a></li></ol></div>
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+    <img class="site-author-image" itemprop="image" alt="Okii"
+      src="/images/avatar.jpg">
+  <p class="site-author-name" itemprop="name">Okii</p>
+  <div class="site-description" itemprop="description"></div>
+</div>
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/archives/">
+        
+          <span class="site-state-item-count">8</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+            <a href="/categories/">
+          
+        <span class="site-state-item-count">5</span>
+        <span class="site-state-item-name">分类</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+            <a href="/tags/">
+          
+        <span class="site-state-item-count">7</span>
+        <span class="site-state-item-name">标签</span></a>
+      </div>
+  </nav>
+</div>
+  <div class="links-of-author motion-element">
+      <span class="links-of-author-item">
+        <a href="https://github.com/LimOkii" title="GitHub → https:&#x2F;&#x2F;github.com&#x2F;LimOkii" rel="noopener" target="_blank"><i class="fa fa-fw fa-github"></i>GitHub</a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="mailto:lyfei1126@gmail.com" title="E-Mail → mailto:lyfei1126@gmail.com" rel="noopener" target="_blank"><i class="fa fa-fw fa-envelope"></i>E-Mail</a>
+      </span>
+  </div>
+
+
+
+      </div>
+
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        
+
+        
+
+<div class="copyright">
+  
+  &copy; 
+  <span itemprop="copyrightYear">2024</span>
+  <span class="with-love">
+    <i class="fa fa-user"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">Okii</span>
+</div>
+  <div class="powered-by">由 <a href="https://hexo.io/" class="theme-link" rel="noopener" target="_blank">Hexo</a> & <a href="https://pisces.theme-next.org/" class="theme-link" rel="noopener" target="_blank">NexT.Pisces</a> 强力驱动
+  </div>
+
+        
+
+
+
+
+
+
+
+
+      </div>
+    </footer>
+  </div>
+
+  
+  <script src="/lib/anime.min.js"></script>
+  <script src="/lib/velocity/velocity.min.js"></script>
+  <script src="/lib/velocity/velocity.ui.min.js"></script>
+
+<script src="/js/utils.js"></script>
+
+<script src="/js/motion.js"></script>
+
+
+<script src="/js/schemes/pisces.js"></script>
+
+
+<script src="/js/next-boot.js"></script>
+
+
+
+
+  
+
+
+
+
+  
+<script src="/js/local-search.js"></script>
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+
+</body>
+</html>

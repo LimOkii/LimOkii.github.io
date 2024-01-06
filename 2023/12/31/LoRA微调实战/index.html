@@ -1,0 +1,589 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 7.0.0">
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/logo.jpg">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/logo.jpg">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/logo.jpg">
+  <link rel="mask-icon" href="/images/logo.jpg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+<link rel="stylesheet" href="/lib/font-awesome/css/font-awesome.min.css">
+
+<script id="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"limokii.github.io","root":"/","scheme":"Pisces","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":false,"show_result":false,"style":null},"back2top":{"enable":true,"sidebar":false,"scrollpercent":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},"path":"search.xml"};
+  </script>
+
+  <meta name="description" content="使用LoRA微调LLaMa2，训练LLM在给定上下文无法回答用户问题时拒绝回答的能力，而不是胡说。">
+<meta property="og:type" content="article">
+<meta property="og:title" content="LoRA微调实战">
+<meta property="og:url" content="https://limokii.github.io/2023/12/31/LoRA%E5%BE%AE%E8%B0%83%E5%AE%9E%E6%88%98/index.html">
+<meta property="og:site_name" content="Okii&#39;s blog">
+<meta property="og:description" content="使用LoRA微调LLaMa2，训练LLM在给定上下文无法回答用户问题时拒绝回答的能力，而不是胡说。">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="https://limokii.github.io/2023/12/31/LoRA%E5%BE%AE%E8%B0%83%E5%AE%9E%E6%88%98/image-20240101102501900.png">
+<meta property="og:image" content="https://limokii.github.io/2023/12/31/LoRA%E5%BE%AE%E8%B0%83%E5%AE%9E%E6%88%98/image-20240101152138111.png">
+<meta property="og:image" content="https://limokii.github.io/2023/12/31/LoRA%E5%BE%AE%E8%B0%83%E5%AE%9E%E6%88%98/image-20240101104514987.png">
+<meta property="og:image" content="https://limokii.github.io/2023/12/31/LoRA%E5%BE%AE%E8%B0%83%E5%AE%9E%E6%88%98/image-20240101161620803.png">
+<meta property="og:image" content="https://limokii.github.io/2023/12/31/LoRA%E5%BE%AE%E8%B0%83%E5%AE%9E%E6%88%98/image-20240101174138733.png">
+<meta property="article:published_time" content="2023-12-31T15:12:11.000Z">
+<meta property="article:modified_time" content="2024-01-01T14:01:15.921Z">
+<meta property="article:author" content="Okii">
+<meta property="article:tag" content="LoRA">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://limokii.github.io/2023/12/31/LoRA%E5%BE%AE%E8%B0%83%E5%AE%9E%E6%88%98/image-20240101102501900.png">
+
+<link rel="canonical" href="https://limokii.github.io/2023/12/31/LoRA%E5%BE%AE%E8%B0%83%E5%AE%9E%E6%88%98/">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome : false,
+    isPost : true,
+    lang   : 'zh-CN'
+  };
+</script>
+
+  <title>LoRA微调实战 | Okii's blog</title>
+  
+
+
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="container use-motion">
+    <div class="headband"></div>
+
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="切换导航栏">
+      <span class="toggle-line toggle-line-first"></span>
+      <span class="toggle-line toggle-line-middle"></span>
+      <span class="toggle-line toggle-line-last"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <span class="logo-line-before"><i></i></span>
+      <h1 class="site-title">Okii's blog</h1>
+      <span class="logo-line-after"><i></i></span>
+    </a>
+      <p class="site-subtitle" itemprop="description">仅作为记录自己的学习过程</p>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+        <i class="fa fa-search fa-fw fa-lg"></i>
+    </div>
+  </div>
+</div>
+
+
+
+
+<nav class="site-nav">
+  <ul id="menu" class="menu">
+        <li class="menu-item menu-item-home">
+
+    <a href="/" rel="section"><i class="fa fa-fw fa-home"></i>首页</a>
+
+  </li>
+        <li class="menu-item menu-item-tags">
+
+    <a href="/tags/" rel="section"><i class="fa fa-fw fa-tags"></i>标签<span class="badge">7</span></a>
+
+  </li>
+        <li class="menu-item menu-item-categories">
+
+    <a href="/categories/" rel="section"><i class="fa fa-fw fa-th"></i>分类<span class="badge">5</span></a>
+
+  </li>
+        <li class="menu-item menu-item-archives">
+
+    <a href="/archives/" rel="section"><i class="fa fa-fw fa-archive"></i>归档<span class="badge">8</span></a>
+
+  </li>
+      <li class="menu-item menu-item-search">
+        <a role="button" class="popup-trigger"><i class="fa fa-search fa-fw"></i>搜索
+        </a>
+      </li>
+  </ul>
+</nav>
+
+
+
+  <div class="search-pop-overlay">
+    <div class="popup search-popup">
+        <div class="search-header">
+  <span class="search-icon">
+    <i class="fa fa-search"></i>
+  </span>
+  <div class="search-input-container">
+    <input autocomplete="off" autocapitalize="off"
+           placeholder="搜索..." spellcheck="false"
+           type="search" class="search-input">
+  </div>
+  <span class="popup-btn-close">
+    <i class="fa fa-times-circle"></i>
+  </span>
+</div>
+<div id="search-result">
+  <div id="no-result">
+    <i class="fa fa-spinner fa-pulse fa-5x fa-fw"></i>
+  </div>
+</div>
+
+    </div>
+  </div>
+
+</div>
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+
+
+    <main class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+
+          <div class="content post posts-expand">
+            
+
+    
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="https://limokii.github.io/2023/12/31/LoRA%E5%BE%AE%E8%B0%83%E5%AE%9E%E6%88%98/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.jpg">
+      <meta itemprop="name" content="Okii">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Okii's blog">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          LoRA微调实战
+        </h1>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+
+              <time title="创建时间：2023-12-31 23:12:11" itemprop="dateCreated datePublished" datetime="2023-12-31T23:12:11+08:00">2023-12-31</time>
+            </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/%E9%A1%B9%E7%9B%AE%E5%AE%9E%E6%88%98/" itemprop="url" rel="index"><span itemprop="name">项目实战</span></a>
+                </span>
+            </span>
+
+          <br>
+            <span class="post-meta-item" title="本文字数">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-file-word-o"></i>
+              </span>
+                <span class="post-meta-item-text">本文字数：</span>
+              <span>8.5k</span>
+            </span>
+            <span class="post-meta-item" title="阅读时长">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-clock-o"></i>
+              </span>
+                <span class="post-meta-item-text">阅读时长 &asymp;</span>
+              <span>15 分钟</span>
+            </span>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        <p>使用LoRA微调LLaMa2，训练LLM在给定上下文无法回答用户问题时拒绝回答的能力，而不是胡说。</p>
+<span id="more"></span>
+
+<h2 id="1、实验简介"><a href="#1、实验简介" class="headerlink" title="1、实验简介"></a>1、实验简介</h2><p><strong>选题：《基于  <a target="_blank" rel="noopener" href="https://github.com/hiyouga/LLaMA-Factory">https://github.com/hiyouga/LLaMA-Factory</a> 开源项目跑通一个Chat机器人》</strong></p>
+<p><strong>选择的是方向1：</strong>尝试对模型进行简单的指令微调，数据集可以是自己构造的、可以是开源的；</p>
+<p><strong>Github代码仓库：</strong><a target="_blank" rel="noopener" href="https://github.com/LimOkii/nlp_lab">https://github.com/LimOkii/nlp_lab</a></p>
+<h3 id="1-1-任务简介"><a href="#1-1-任务简介" class="headerlink" title="1.1 任务简介"></a>1.1 任务简介</h3><p>本次大作业我想微调出一个<code>LLM</code>，使之能够判断给定的语料是否能解答用户问题，不能编造答案。如果根据所有的内容都无法得出明确的结论，需要回复“对不起，根据参考资料无法回答“这些类似的回答。</p>
+<p>本次微调的基座采用Meta发布的<code>LLaMa-2-hf-7b-chat</code>版本，训练<code>LLM</code>在给定上下文无法回答用户问题时拒绝回答的能力，而不是胡说。</p>
+<p><strong>微调代码参考：</strong><a target="_blank" rel="noopener" href="https://github.com/ymcui/Chinese-LLaMA-Alpaca-2">https://github.com/ymcui/Chinese-LLaMA-Alpaca-2</a></p>
+<h3 id="1-2-数据集介绍"><a href="#1-2-数据集介绍" class="headerlink" title="1.2  数据集介绍"></a>1.2  数据集介绍</h3><ul>
+<li>本次微调采用的数据集是百度发布的<code>WebQA</code></li>
+</ul>
+<figure class="highlight txt"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line">链接: https://pan.baidu.com/s/1pLXEYtd 密码: 6fbf</span><br><span class="line"></span><br><span class="line">文件列表：</span><br><span class="line">WebQA.v1.0/readme.txt</span><br><span class="line">WebQA.v1.0/me_test.ann.json （一个问题只配一段材料，材料中有答案）</span><br><span class="line">WebQA.v1.0/me_test.ir.json （一个问题配多段材料，材料可能有也可能没有答案）</span><br><span class="line">WebQA.v1.0/me_train.json （混合的训练语料）</span><br><span class="line">WebQA.v1.0/me_validation.ann.json （一个问题只配一段材料，材料中有答案）</span><br><span class="line">WebQA.v1.0/me_validation.ir.json （一个问题配多段材料，材料可能有也可能没有答案）</span><br><span class="line"></span><br><span class="line">test跟validation的区别是，理论上来说，validation的分布跟train的分布更加接近。一般而言，validation用来验证模型的精确度，test用来验证模型的迁移能力。ann与ir的区别是，因为ir给每个问题配置了多段材料，可以通过各段材料投票来得到更加可靠的答案；而ann则是一问一材料的形式，是真正考验阅读理解能力的测试集。</span><br></pre></td></tr></table></figure>
+
+
+
+<ul>
+<li><code>me_train.jsons</code>数据样例如下：</li>
+</ul>
+<figure class="highlight json"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br></pre></td><td class="code"><pre><span class="line"><span class="attr">&quot;Q_TRN_005637&quot;</span><span class="punctuation">:</span> <span class="punctuation">&#123;</span></span><br><span class="line">    <span class="attr">&quot;question&quot;</span><span class="punctuation">:</span> <span class="string">&quot;世界上最早的报纸诞生于&quot;</span><span class="punctuation">,</span></span><br><span class="line">    <span class="attr">&quot;evidences&quot;</span><span class="punctuation">:</span> <span class="punctuation">&#123;</span></span><br><span class="line">        <span class="attr">&quot;Q_TRN_005637#00&quot;</span><span class="punctuation">:</span> <span class="punctuation">&#123;</span></span><br><span class="line">            <span class="attr">&quot;answer&quot;</span><span class="punctuation">:</span> <span class="punctuation">[</span></span><br><span class="line">                <span class="string">&quot;no_answer&quot;</span></span><br><span class="line">            <span class="punctuation">]</span><span class="punctuation">,</span></span><br><span class="line">            <span class="attr">&quot;evidence&quot;</span><span class="punctuation">:</span> <span class="string">&quot;1、十月革命胜利,世界上出现了第一个社会主义国家.一个崭新的社会主义报刊体系在苏俄确立形成.&lt;e&gt;2、二战结束后,又有欧、亚、拉美一系列国家脱离了资本主义体系,走社会主义道路,社会主义报业得到很大发展.&lt;e&gt;3、“苏东”剧变后,这些国家的报业结构和性质发生了重大变化.&lt;e&gt;十六、苏联时期报刊体制的主要特征是怎样的?&lt;e&gt;1、苏联的报刊,都属于国家所有,是党和国家机构的重要组成部分；其基本职能是集体的宣传员、集体的鼓动员和集体的组织者.&lt;e&gt;2、苏联的各级报刊绝对服从于各级党委的领导.&lt;e&gt;3、苏联报纸信息来源单一,言论高度集中.&lt;e&gt;4、苏联报刊在建设时期是社会主义建设的工具.&lt;e&gt;十七、发展中国家报业又何共同特点?&lt;e&gt;1、早期报刊、尤其是报业发端较早的国家的早期报刊,大多是殖民者创办的；&lt;e&gt;2、随着反殖民主义反封建斗争的开展,这些国家的民族报刊逐步发展起来,并推动了反殖民主义反封建斗争的进程。</span></span><br><span class="line"><span class="string">        &#125;,</span></span><br><span class="line"><span class="string">        ………</span></span><br><span class="line"><span class="string">        …………</span></span><br><span class="line"><span class="string">        &quot;</span>Q_TRN_005637#<span class="number">03</span><span class="string">&quot;: &#123;</span></span><br><span class="line"><span class="string">            &quot;</span>answer<span class="string">&quot;: [</span></span><br><span class="line"><span class="string">                &quot;</span>中国<span class="string">&quot;</span></span><br><span class="line"><span class="string">            ],</span></span><br><span class="line"><span class="string">            &quot;</span>evidence<span class="string">&quot;: &quot;</span>北宋末年(公元<span class="number">11</span><span class="punctuation">,</span><span class="number">12</span>世纪)出现的印刷报纸<span class="punctuation">,</span>不仅是中国新闻史上最早的印刷报纸<span class="punctuation">,</span>也是世界新闻史上最早的印刷报纸.中国新闻事业历史的悠久<span class="punctuation">,</span>内容的丰富<span class="punctuation">,</span>是任何西方国家都难以比肩的.&lt;e&gt;中国古代的报纸产生于中国的封建社会时期<span class="punctuation">,</span>是封建地主阶级及其政治代表占统治地位的封建自然经济通过新闻手段的反映.在漫长的封建社会时期<span class="punctuation">,</span>中国古代的报纸<span class="punctuation">,</span>不论是官方的邸报<span class="punctuation">,</span>还是民办的小报和京报<span class="punctuation">,</span>都必然要和当时的封建统治者保持一定的联系.&lt;e&gt;中国古代的邸报有<span class="number">1200</span>年左右的历史.小报有近千年的历史.民间报房出版的邸报<span class="punctuation">,</span>京报有近<span class="number">400</span>年的历史.它们从诞生到结束<span class="punctuation">,</span>持续的时间都不算短<span class="punctuation">,</span>但发展不快<span class="punctuation">,</span>形式内容的变化不大.<span class="string">&quot;</span></span><br><span class="line"><span class="string">        &#125;,</span></span><br><span class="line"><span class="string">        &quot;</span>Q_TRN_005637#<span class="number">04</span><span class="string">&quot;: &#123;</span></span><br><span class="line"><span class="string">            &quot;</span>answer<span class="string">&quot;: [</span></span><br><span class="line"><span class="string">                &quot;</span>no_answer<span class="string">&quot;</span></span><br><span class="line"><span class="string">            ],</span></span><br><span class="line"><span class="string">            &quot;</span>evidence<span class="string">&quot;: &quot;</span>因此，一般认为，世界上最早的报纸诞生在<span class="number">1609</span>年。<span class="string">&quot;</span></span><br><span class="line"><span class="string">        &#125;,</span></span><br><span class="line"><span class="string">        &quot;</span>Q_TRN_005637#<span class="number">05</span><span class="string">&quot;: &#123;</span></span><br><span class="line"><span class="string">            &quot;</span>answer<span class="string">&quot;: [</span></span><br><span class="line"><span class="string">                &quot;</span>中国<span class="string">&quot;</span></span><br><span class="line"><span class="string">            ],</span></span><br><span class="line"><span class="string">            &quot;</span>evidence<span class="string">&quot;: &quot;</span>报纸从诞生到今天已经走过了漫长的历史，公元前<span class="number">60</span>年，古罗马政治家恺撒把罗马市以及国家发生的时间书写在白色的木板上，告示市民。这便是世界上最古老的报纸。中国在<span class="number">7</span>世纪，唐朝宫廷内就发行过手写的传阅版，这应该算是中国最早的报纸。<span class="string">&quot;</span></span><br><span class="line"><span class="string">        &#125;,</span></span><br><span class="line"><span class="string">        &quot;</span>Q_TRN_005637#<span class="number">06</span><span class="string">&quot;: &#123;</span></span><br><span class="line"><span class="string">            &quot;</span>answer<span class="string">&quot;: [</span></span><br><span class="line"><span class="string">                &quot;</span>中国<span class="string">&quot;</span></span><br><span class="line"><span class="string">            ],</span></span><br><span class="line"><span class="string">            &quot;</span>evidence<span class="string">&quot;: &quot;</span>最早的写在纸上的报纸和印刷在纸上的报纸都诞生于中国.唐玄宗开元年间(公元<span class="number">713</span>年-<span class="number">-742</span>年)出现的开元杂报<span class="punctuation">,</span>不仅是中国新闻史上最早的报纸<span class="punctuation">,</span>也是世界新闻史上最早的报纸.<span class="string">&quot;</span></span><br><span class="line"><span class="string">        &#125;,</span></span><br><span class="line"><span class="string">        &quot;</span>Q_TRN_005637#<span class="number">09</span><span class="string">&quot;: &#123;</span></span><br><span class="line"><span class="string">            &quot;</span>answer<span class="string">&quot;: [</span></span><br><span class="line"><span class="string">                &quot;</span>no_answer<span class="string">&quot;</span></span><br><span class="line"><span class="string">            ],</span></span><br><span class="line"><span class="string">            &quot;</span>evidence<span class="string">&quot;: &quot;</span>答：<span class="number">1566</span>年<span class="punctuation">,</span>世界最早的印刷报纸《威尼斯新闻》诞生于<span class="number">1566</span>年的意大利威尼斯邸报》是我国在世界上发行最早，时间最久的报纸。<span class="string">&quot;</span></span><br><span class="line"><span class="string">        &#125;</span></span><br><span class="line"><span class="string">    &#125;</span></span><br><span class="line"><span class="string">&#125;</span></span><br></pre></td></tr></table></figure>
+
+<p>​        这个数据集非常适合做给定上下文的回答问题，<code>evidence</code>即是输入给模型的上下文，<code>question</code>则是用户提出的问题，模型需要根据给定的<code>evidence</code>以及<code>question</code>回答<code>no_answer</code>或者是答案。</p>
+<h2 id="2、基座模型LLaMa介绍"><a href="#2、基座模型LLaMa介绍" class="headerlink" title="2、基座模型LLaMa介绍"></a>2、基座模型LLaMa介绍</h2><p> 本次微调的基座模型采用Meta发布的<code>LLaMa-2-hf-7b-chat</code>版本</p>
+<img src="/2023/12/31/LoRA%E5%BE%AE%E8%B0%83%E5%AE%9E%E6%88%98/image-20240101102501900.png" alt="image-20240101102501900" style="zoom:50%;">
+
+<p><code>LLaMa2</code> 和 <code>LLaMa</code> 的模型结构基本一致，共用了 32 个 <code>decoder</code> 层。其中每个 <code>decoder</code> 层如上图右半部分所示，<code>LLaMa2</code> 主要是将 <code>Transformer</code> 中的 <code>Layer Norm</code> 换成了 <code>RMS Norm</code>，<code>Multi-Head Attention</code> 换成了 <code>GQA</code>（&#96;&#96;LLaMa<code>是</code>MQA<code>）, </code>Positional Encoding <code>换成了 </code>Rotary Encoding<code>（</code>RoPE<code> 旋转位置编码），在前馈神经网络（</code>FFN<code>） 使用 </code>SwiGLU<code>激活函数替换了</code>Transformer<code>中的</code>ReLU&#96; 激活函数。</p>
+<h2 id="3、实验步骤"><a href="#3、实验步骤" class="headerlink" title="3、实验步骤"></a>3、实验步骤</h2><h3 id="3-1-数据预处理"><a href="#3-1-数据预处理" class="headerlink" title="3.1 数据预处理"></a>3.1 数据预处理</h3><p>本次微调代码参考的<code>Chinese-LLaMA-Alpaca-2</code>，指令微调数据格式为<code>Stanford Alpaca</code>：</p>
+<figure class="highlight json"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="punctuation">[</span></span><br><span class="line">  <span class="punctuation">&#123;</span><span class="attr">&quot;instruction&quot;</span> <span class="punctuation">:</span> ...<span class="punctuation">,</span></span><br><span class="line">   <span class="attr">&quot;input&quot;</span> <span class="punctuation">:</span> ...<span class="punctuation">,</span></span><br><span class="line">   <span class="attr">&quot;output&quot;</span> <span class="punctuation">:</span> ...<span class="punctuation">&#125;</span><span class="punctuation">,</span></span><br><span class="line">  ...</span><br><span class="line"><span class="punctuation">]</span></span><br></pre></td></tr></table></figure>
+
+<p>需要对<code>WebQA</code>数据集做转换，因此编写了脚本 <code>convert_data_to_llama_train.py</code></p>
+<p><code>instruction</code>：”请根据给定下文：” +  “evidence” +  ‘\n’  +  “告诉我”  +  “question” + ‘\n’</p>
+<p><code>input</code>: “”</p>
+<p><code>output</code>：”answer”</p>
+<ul>
+<li>为了让模型无法回答的输出多样化，如果答案为<code>no_answer</code>,则从以下模板中随机选择一句回答</li>
+</ul>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># 无法回答时，模型给出的回答样例</span></span><br><span class="line">cant_answer_template = [</span><br><span class="line">    <span class="string">&#x27;抱歉，根据您所给的内容，我无法找到有关问题的答案&#x27;</span>,</span><br><span class="line">    <span class="string">&#x27;给定的信息中似乎没有提到问题的答案&#x27;</span>,</span><br><span class="line">    <span class="string">&#x27;根据提供的内容，我无法找到问题的相关信息&#x27;</span>,</span><br><span class="line">    <span class="string">&#x27;根据您提供的上下文，我找不到与问题相关的答案&#x27;</span>,</span><br><span class="line">    <span class="string">&#x27;给定的信息中似乎没有与问题有关的信息&#x27;</span>,</span><br><span class="line">    <span class="string">&#x27;根据上述内容，我难以找到问题的解答&#x27;</span>,</span><br><span class="line">    <span class="string">&#x27;据我所知，问题的答案不在提供的信息中&#x27;</span>,</span><br><span class="line">    <span class="string">&#x27;根据上述信息，问题的答案似乎不可得&#x27;</span>,</span><br><span class="line">    <span class="string">&#x27;给定的上下文似乎没有包含问题的答案&#x27;</span>,</span><br><span class="line">    <span class="string">&#x27;给定的信息中似乎没有与问题有关的线索&#x27;</span></span><br><span class="line">]</span><br></pre></td></tr></table></figure>
+
+<ul>
+<li>最终转换后的训练数据样例如下：</li>
+</ul>
+<figure class="highlight json"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line"><span class="punctuation">[</span></span><br><span class="line">    <span class="punctuation">&#123;</span></span><br><span class="line">        <span class="attr">&quot;instruction&quot;</span><span class="punctuation">:</span> <span class="string">&quot;请根据给定下文：1、十月革命胜利,世界上出现了第一个社会主义国家.一个崭新的社会主义报刊体系在苏俄确立形成.&lt;e&gt;2、二战结束后,又有欧、亚、拉美一系列国家脱离了资本主义体系,走社会主义道路,社会主义报业得到很大发展.&lt;e&gt;3、“苏东”剧变后,这些国家的报业结构和性质发生了重大变化.&lt;e&gt;十六、苏联时期报刊体制的主要特征是怎样的?&lt;e&gt;1、苏联的报刊,都属于国家所有,是党和国家机构的重要组成部分；其基本职能是集体的宣传员、集体的鼓动员和集体的组织者.&lt;e&gt;2、苏联的各级报刊绝对服从于各级党委的领导.&lt;e&gt;3、苏联报纸信息来源单一,言论高度集中.&lt;e&gt;4、苏联报刊在建设时期是社会主义建设的工具.&lt;e&gt;十七、发展中国家报业又何共同特点?&lt;e&gt;1、早期报刊、尤其是报业发端较早的国家的早期报刊,大多是殖民者创办的；&lt;e&gt;2、随着反殖民主义反封建斗争的开展,这些国家的民族报刊逐步发展起来,并推动了反殖民主义反封建斗争的进程；十八、新闻通讯社是在怎样的背景下诞生的?它的功能与作用如何?\n告诉我世界上最早的报纸诞生于\n&quot;</span><span class="punctuation">,</span></span><br><span class="line">        <span class="attr">&quot;input&quot;</span><span class="punctuation">:</span> <span class="string">&quot;&quot;</span><span class="punctuation">,</span></span><br><span class="line">        <span class="attr">&quot;output&quot;</span><span class="punctuation">:</span> <span class="string">&quot;给定的上下文似乎没有包含问题的答案&quot;</span></span><br><span class="line">    <span class="punctuation">&#125;</span><span class="punctuation">,</span></span><br><span class="line">    <span class="punctuation">&#123;</span></span><br><span class="line">        <span class="attr">&quot;instruction&quot;</span><span class="punctuation">:</span> <span class="string">&quot;请根据给定下文：1566年,世界最早的印刷报纸《威尼斯新闻》诞生于1566年的意大利威尼斯\n告诉我世界上最早的报纸诞生于\n&quot;</span><span class="punctuation">,</span></span><br><span class="line">        <span class="attr">&quot;input&quot;</span><span class="punctuation">:</span> <span class="string">&quot;&quot;</span><span class="punctuation">,</span></span><br><span class="line">        <span class="attr">&quot;output&quot;</span><span class="punctuation">:</span> <span class="string">&quot;给定的信息中似乎没有与问题有关的信息&quot;</span></span><br><span class="line">    <span class="punctuation">&#125;</span></span><br><span class="line"><span class="punctuation">]</span></span><br></pre></td></tr></table></figure>
+
+
+
+<h3 id="3-2-微调训练"><a href="#3-2-微调训练" class="headerlink" title="3.2 微调训练"></a>3.2 微调训练</h3><h4 id="3-2-1-LoRA介绍"><a href="#3-2-1-LoRA介绍" class="headerlink" title="3.2.1 LoRA介绍"></a>3.2.1 LoRA介绍</h4><p>由于大语言模型参数量十分庞大，当将其应用到下游任务时，微调全部参数需要相当高的算力。为了节省成本，研究人员提出了多种参数高效<code>（Parameter Efficient）</code>的微调方法，旨在仅训练少量参数使模型适应到下游任务。本项目使用<code>LoRA(Low-Rank Adaptation of Large Language Models)</code>进行模型微调。<code>LoRA </code>方法 可以在缩减训练参数量和 <code>GPU</code> 显存占用的同时，使训练后的模型具有与全量微调相当的性能。</p>
+<p>研究表明，语言模型针对特定任务微调之后，权重矩阵通常具有很低的本征秩 <code>（Intrinsic Rank）</code>。研究人员认为参数更新量即便投影到较小的子空间中，也不会影响学习的有效性。因此，提出固定预训练模型参数不变，在原本权重矩阵旁路添加低秩矩阵的乘积作为可训练参数，用以模拟参数的变化量。具体来说，假设预训练权重为${w_0\ \epsilon \ \mathbb{R}^{d<em>k}}$，可训练参数为${\varDelta W\ &#x3D;\ BA}$，其中${B\ \epsilon \ \mathbb{R}^{d</em>r} }$，${A\ \epsilon \ \mathbb{R}^{r*d}}$，初始化时，矩阵 ${A}$ 通过高斯函数初始化，矩阵${B}$ 为零初始化，使得训练开始之前旁路对原模型不造成影响，即参数改变量为 0。对于该权重的输入 ${x}$ 来说，输出为式${h\ &#x3D;\ W_0x+∆W\ x\ &#x3D;W_0x+BAx}$，<code>LoRA</code>算法结构方法如图：</p>
+<img src="/2023/12/31/LoRA%E5%BE%AE%E8%B0%83%E5%AE%9E%E6%88%98/image-20240101152138111.png" alt="image-20240101152138111" style="zoom:50%;">
+
+
+
+<p>除 <code>LoRA</code> 之外，也其他高效微调方法，如微调适配器<code>（Adapter）</code>或前缀微调<code>（Prefix Tuning）</code>。 适配器方法分别对 <code>Transformer </code>层中的自注意力模块与多层感知<code>（MLP）</code>模块，在其与其之后的残差连接之间添加适配器层<code>（Adapter layer）</code>作为可训练参数，该方法及其变体会增加网络的深度，从而在模型推理时带来额外的时间开销。当没有使用模型或数据并行时，这种开销会较为明显。而对于使用 <code>LoRA </code>的模型来说，由于可以将原权重与训练后权重合并，即 ${W\ &#x3D;\ W_0\ +\ BA}$， 因此在推理时不存在额外的开销。前缀微调是指在输入序列前缀添加连续可微的软提示作为可训练参数。由于模型可接受的最大输入长度有限，随着软提示的参数量增多，实际输入序列的最大长度也会相应减小，影响模型性能。这使得前缀微调的模型性能并非随着可训练参数量单调上升。 在文献的实验中，使用 <code>LoRA</code> 方法训练的 <code>GPT-2</code>、<code>GPT-3</code>模型在相近数量的可训练参数下， 性能均优于或相当于使用上述两种微调方法。</p>
+<h4 id="3-2-2-LoRA微调"><a href="#3-2-2-LoRA微调" class="headerlink" title="3.2.2 LoRA微调"></a>3.2.2 LoRA微调</h4><p>数据共<code>40w+</code>条，其中训练数据<code>313910</code>条，其余是验证数据，在单卡<code>A6000 48G显存</code>显卡上采用LoRA方式微调。</p>
+<img src="/2023/12/31/LoRA%E5%BE%AE%E8%B0%83%E5%AE%9E%E6%88%98/image-20240101104514987.png" alt="image-20240101104514987" style="zoom:50%;">
+
+<p>可以看到原版<code>LLaMa2</code>是<code>7b</code>的权重,使用<code>LoRA</code>方式微调，训练参数仅为<code>0.3b</code>，为初始权重的<code>4%</code>左右，大大减少了需要训练的参数量。</p>
+<p>在单卡<code>A6000 48G显存</code>训练一个<code>epoch</code>，约<code>57</code>个小时(包括训练时间和评估时间)，最终的<code>loss</code>从一开始的<code>7</code>左右降到了<code>0.1</code>上下。</p>
+<h4 id="3-2-3-权重合并"><a href="#3-2-3-权重合并" class="headerlink" title="3.2.3 权重合并"></a>3.2.3 权重合并</h4><p>手动将<code>LoRA</code>与原版<code>Llama-2</code>合并得到完整模型的流程</p>
+<p>确保机器有足够的内存加载完整模型（例如<code>7B</code>模型需要<code>13-15G</code>）以进行合并模型操作</p>
+<p><strong>Step 1: 获取原版Llama-2-hf模型</strong></p>
+<p><code>HF</code>格式模型相关文件（可以不用下载<code>safetensors</code>格式模型权重）：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line">config.json</span><br><span class="line">generation_config.json</span><br><span class="line">pytorch_model-00001-of-00002.bin</span><br><span class="line">pytorch_model-00002-of-00002.bin</span><br><span class="line">pytorch_model.bin.index.json</span><br><span class="line">special_tokens_map.json</span><br><span class="line">tokenizer_config.json</span><br><span class="line">tokenizer.json</span><br><span class="line">tokenizer.model</span><br></pre></td></tr></table></figure>
+
+<p><strong>Step 2: 合并LoRA权重，生成全量模型权重</strong></p>
+<p>这一步骤会合并<code>LoRA</code>权重，生成全量模型权重。此处可以选择输出<code>PyTorch</code>版本权重（<code>.pth</code>文件）或者输出<code>HuggingFace</code>版本权重（<code>.bin</code>文件）。执行以下命令：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">$ python scripts/merge_llama2_with_chinese_lora_low_mem.py \</span><br><span class="line">    --base_model path_to_original_llama2_hf_dir \</span><br><span class="line">    --lora_model path_to_chinese_llama2_or_alpaca2_lora \</span><br><span class="line">    --output_type huggingface \</span><br><span class="line">    --output_dir path_to_output_dir </span><br><span class="line">    --verbose</span><br></pre></td></tr></table></figure>
+
+<p>参数说明：</p>
+<ul>
+<li><code>--base_model</code>：存放<code>HF</code>格式的<code>Llama-2</code>模型权重和配置文件的目录</li>
+<li><code>--lora_model</code>：中文<code>LLaMA-2/Alpaca-2 LoRA</code>解压后文件所在目录，也可使用🤗<code>Model Hub</code>模型调用名称（会自动下载）</li>
+<li><code>--output_type</code>：指定输出格式，可为<code>pth</code>或<code>huggingface</code>。若不指定，默认为<code>huggingface</code></li>
+<li><code>--output_dir</code>：指定保存全量模型权重的目录，默认为<code>./</code></li>
+<li>（可选）<code>--verbose</code>：显示合并过程中的详细信息</li>
+</ul>
+<p><img src="/2023/12/31/LoRA%E5%BE%AE%E8%B0%83%E5%AE%9E%E6%88%98/image-20240101161620803.png" alt="image-20240101161620803"></p>
+<h2 id="4、实验结果展示"><a href="#4、实验结果展示" class="headerlink" title="4、实验结果展示"></a>4、实验结果展示</h2><figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br></pre></td><td class="code"><pre><span class="line">model = <span class="string">&quot;/data0/luyifei/cant_ans_merge_weight/&quot;</span></span><br><span class="line">tokenizer = AutoTokenizer.from_pretrained(model)</span><br><span class="line">pipeline = transformers.pipeline(</span><br><span class="line">    <span class="string">&quot;conversational&quot;</span>,</span><br><span class="line">    model=model,</span><br><span class="line">    torch_dtype=torch.float16,</span><br><span class="line">    device_map=<span class="string">&quot;auto&quot;</span>,</span><br><span class="line">)</span><br><span class="line">question = <span class="string">&quot;请根据给定下文：在返回江陵途中，写下了这首诗，抒发了诗人愉悦的心情。\n告诉我李白写过一首诗，对飞舟过峡的动态美景作了绝妙的描述，千古流传，这首诗的题目是什么?&quot;</span></span><br><span class="line">conversation = Conversation(question)</span><br><span class="line">sequences = pipeline(</span><br><span class="line">    conversation,</span><br><span class="line">    do_sample=<span class="literal">True</span>,</span><br><span class="line">    top_k=<span class="number">10</span>,</span><br><span class="line">    num_return_sequences=<span class="number">1</span>,</span><br><span class="line">    eos_token_id=tokenizer.eos_token_id,</span><br><span class="line">    max_length=<span class="number">500</span>,</span><br><span class="line">)</span><br><span class="line"><span class="built_in">print</span>(<span class="string">&#x27;问题1是&#x27;</span>,question1)</span><br><span class="line"><span class="built_in">print</span>(<span class="string">&#x27;模型的回复是：&#x27;</span>sequences.generated_responses[-<span class="number">1</span>])</span><br></pre></td></tr></table></figure>
+
+<p>加载合并后的权重，3个测试样例如下：</p>
+<p><img src="/2023/12/31/LoRA%E5%BE%AE%E8%B0%83%E5%AE%9E%E6%88%98/image-20240101174138733.png" alt="image-20240101174138733"></p>
+<ul>
+<li><p>例子1和例子3回答正确</p>
+</li>
+<li><p>例子2回答错误</p>
+</li>
+</ul>
+<p>例子1中，给定的上下文中没有关于这首诗的题目，因此模型无法回答该问题。</p>
+<p>例子2中，给定的上下文中给出了李白的出生地为碎叶城，但是模型却回复无法回答该问题。</p>
+<p>例子3中，给定的上下文中告知b-2轰炸机是美国空军研制，模型也能正确回复答案<code>美国</code></p>
+<h2 id="5、总结"><a href="#5、总结" class="headerlink" title="5、总结"></a>5、总结</h2><p>​		使用<code>LoRA</code>方式微调<code>LLaMa</code>，能使大模型一定程度上根据给定的上下文来回答问题。在给定上下文不包含问题的答案时能输出”对不起，我无法回答该问题”等回复，若给定上下文包含问题的答案，模型也能输出正确答案。</p>
+<p>​		但是当我尝试更多样例测试时，发现模型更容易偏向输出无法回答的回复，即使给定上下文中有明确的问题答案。我总结的分析原因如下：</p>
+<p>​		微调大型模型时，模型可能会倾向于输出一种相对保守的策略，即更倾向于回答无法回答的响应。这可能是因为微调过程中的数据集中，有更多的例子涉及到模型无法从给定上下文中得知答案的情况，导致模型更容易学习到这种“保守”的回答。</p>
+<p>有几个可能的原因导致这种现象：</p>
+<ol>
+<li><strong>数据分布不均衡：</strong> 可能时微调数据中无法回答的例子相对较多，模型可能会更容易学习到输出类似于“无法回答”的响应。</li>
+<li><strong>Loss 函数设计：</strong> 微调过程中使用的损失函数可能也影响了模型的学习方向。如果损失函数更倾向于对无法回答的情况进行惩罚，模型可能更倾向于产生这样的输出。</li>
+<li><strong>训练数据中的噪声：</strong> 如果微调数据中包含了噪声或错误的标签，模型可能会过度拟合这些错误的标签，导致更多的“无法回答”响应。</li>
+</ol>
+<p>​	下一步尝试的改进方向：</p>
+<p>​	1、<strong>检查数据质量：</strong> 仔细检查微调数据集，确保标签和上下文对应正确，避免包含噪声或错误的信息。</p>
+<p>​    2、<strong>平衡数据集：</strong> 确保微调的数据集中有足够的例子涉及到模型可以回答的情况，以及无法回答的情况，以避免数据分布不均衡。</p>
+
+    </div>
+
+    
+    
+    
+        
+
+<div>
+<ul class="post-copyright">
+  <li class="post-copyright-author">
+    <strong>本文作者： </strong>Okii
+  </li>
+  <li class="post-copyright-link">
+    <strong>本文链接：</strong>
+    <a href="https://limokii.github.io/2023/12/31/LoRA%E5%BE%AE%E8%B0%83%E5%AE%9E%E6%88%98/" title="LoRA微调实战">https://limokii.github.io/2023/12/31/LoRA微调实战/</a>
+  </li>
+  <li class="post-copyright-license">
+    <strong>版权声明： </strong>本博客所有文章除特别声明外，均采用 <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/" rel="noopener" target="_blank"><i class="fa fa-fw fa-creative-commons"></i>BY-NC-SA</a> 许可协议。转载请注明出处！
+  </li>
+</ul>
+</div>
+
+
+      <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/tags/LoRA/" rel="tag"># LoRA</a>
+          </div>
+
+        
+
+
+        
+    <div class="post-nav">
+      <div class="post-nav-item">
+    <a href="/2023/12/26/Parameter%20Efficient%20Fine-Tuning(PEFT)%E7%B3%BB%E5%88%97%E8%AE%BA%E6%96%87%E6%80%BB%E7%BB%93(%E4%BA%8C)/" rel="prev" title="Parameter Efficient Fine-Tuning(PEFT)系列论文总结(二)">
+      <i class="fa fa-chevron-left"></i> Parameter Efficient Fine-Tuning(PEFT)系列论文总结(二)
+    </a></div>
+      <div class="post-nav-item">
+    <a href="/2024/01/06/%E6%95%B0%E7%BB%84%E7%AF%87/" rel="next" title="Leetcode 数组篇">
+      Leetcode 数组篇 <i class="fa fa-chevron-right"></i>
+    </a></div>
+    </div>
+      </footer>
+    
+  </article>
+  
+  
+  
+
+
+
+          </div>
+          
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let { activeClass } = CONFIG.comments;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      let activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      let commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+        </div>
+          
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          文章目录
+        </li>
+        <li class="sidebar-nav-overview">
+          站点概览
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#1%E3%80%81%E5%AE%9E%E9%AA%8C%E7%AE%80%E4%BB%8B"><span class="nav-text">1、实验简介</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#1-1-%E4%BB%BB%E5%8A%A1%E7%AE%80%E4%BB%8B"><span class="nav-text">1.1 任务简介</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#1-2-%E6%95%B0%E6%8D%AE%E9%9B%86%E4%BB%8B%E7%BB%8D"><span class="nav-text">1.2  数据集介绍</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#2%E3%80%81%E5%9F%BA%E5%BA%A7%E6%A8%A1%E5%9E%8BLLaMa%E4%BB%8B%E7%BB%8D"><span class="nav-text">2、基座模型LLaMa介绍</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#3%E3%80%81%E5%AE%9E%E9%AA%8C%E6%AD%A5%E9%AA%A4"><span class="nav-text">3、实验步骤</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#3-1-%E6%95%B0%E6%8D%AE%E9%A2%84%E5%A4%84%E7%90%86"><span class="nav-text">3.1 数据预处理</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#3-2-%E5%BE%AE%E8%B0%83%E8%AE%AD%E7%BB%83"><span class="nav-text">3.2 微调训练</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#3-2-1-LoRA%E4%BB%8B%E7%BB%8D"><span class="nav-text">3.2.1 LoRA介绍</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#3-2-2-LoRA%E5%BE%AE%E8%B0%83"><span class="nav-text">3.2.2 LoRA微调</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#3-2-3-%E6%9D%83%E9%87%8D%E5%90%88%E5%B9%B6"><span class="nav-text">3.2.3 权重合并</span></a></li></ol></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#4%E3%80%81%E5%AE%9E%E9%AA%8C%E7%BB%93%E6%9E%9C%E5%B1%95%E7%A4%BA"><span class="nav-text">4、实验结果展示</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#5%E3%80%81%E6%80%BB%E7%BB%93"><span class="nav-text">5、总结</span></a></li></ol></div>
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+    <img class="site-author-image" itemprop="image" alt="Okii"
+      src="/images/avatar.jpg">
+  <p class="site-author-name" itemprop="name">Okii</p>
+  <div class="site-description" itemprop="description"></div>
+</div>
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/archives/">
+        
+          <span class="site-state-item-count">8</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+            <a href="/categories/">
+          
+        <span class="site-state-item-count">5</span>
+        <span class="site-state-item-name">分类</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+            <a href="/tags/">
+          
+        <span class="site-state-item-count">7</span>
+        <span class="site-state-item-name">标签</span></a>
+      </div>
+  </nav>
+</div>
+  <div class="links-of-author motion-element">
+      <span class="links-of-author-item">
+        <a href="https://github.com/LimOkii" title="GitHub → https:&#x2F;&#x2F;github.com&#x2F;LimOkii" rel="noopener" target="_blank"><i class="fa fa-fw fa-github"></i>GitHub</a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="mailto:lyfei1126@gmail.com" title="E-Mail → mailto:lyfei1126@gmail.com" rel="noopener" target="_blank"><i class="fa fa-fw fa-envelope"></i>E-Mail</a>
+      </span>
+  </div>
+
+
+
+      </div>
+
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        
+
+        
+
+<div class="copyright">
+  
+  &copy; 
+  <span itemprop="copyrightYear">2024</span>
+  <span class="with-love">
+    <i class="fa fa-user"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">Okii</span>
+</div>
+  <div class="powered-by">由 <a href="https://hexo.io/" class="theme-link" rel="noopener" target="_blank">Hexo</a> & <a href="https://pisces.theme-next.org/" class="theme-link" rel="noopener" target="_blank">NexT.Pisces</a> 强力驱动
+  </div>
+
+        
+
+
+
+
+
+
+
+
+      </div>
+    </footer>
+  </div>
+
+  
+  <script src="/lib/anime.min.js"></script>
+  <script src="/lib/velocity/velocity.min.js"></script>
+  <script src="/lib/velocity/velocity.ui.min.js"></script>
+
+<script src="/js/utils.js"></script>
+
+<script src="/js/motion.js"></script>
+
+
+<script src="/js/schemes/pisces.js"></script>
+
+
+<script src="/js/next-boot.js"></script>
+
+
+
+
+  
+
+
+
+
+  
+<script src="/js/local-search.js"></script>
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+
+</body>
+</html>
