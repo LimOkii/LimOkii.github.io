@@ -23,17 +23,21 @@
   <meta name="description" content="承接上篇Parameter Efficient Fine-Tuning(PEFT)系列论文总结(二)，本篇主要介绍LoRA及其各种变体的微调方法。">
 <meta property="og:type" content="article">
 <meta property="og:title" content="Parameter Efficient Fine-Tuning(PEFT)系列论文总结(三)">
-<meta property="og:url" content="https://limokii.github.io/2023/12/27/Parameter%20Efficient%20Fine-Tuning(PEFT)%E7%B3%BB%E5%88%97%E8%AE%BA%E6%96%87%E6%80%BB%E7%BB%93(%E4%B8%89)/index.html">
+<meta property="og:url" content="https://limokii.github.io/2023/12/29/Parameter%20Efficient%20Fine-Tuning(PEFT)%E7%B3%BB%E5%88%97%E8%AE%BA%E6%96%87%E6%80%BB%E7%BB%93(%E4%B8%89)/index.html">
 <meta property="og:site_name" content="Okii&#39;s blog">
 <meta property="og:description" content="承接上篇Parameter Efficient Fine-Tuning(PEFT)系列论文总结(二)，本篇主要介绍LoRA及其各种变体的微调方法。">
 <meta property="og:locale" content="zh_CN">
-<meta property="article:published_time" content="2023-12-27T15:12:11.000Z">
-<meta property="article:modified_time" content="2024-01-07T06:15:28.911Z">
+<meta property="og:image" content="https://limokii.github.io/2023/12/29/Parameter%20Efficient%20Fine-Tuning(PEFT)%E7%B3%BB%E5%88%97%E8%AE%BA%E6%96%87%E6%80%BB%E7%BB%93(%E4%B8%89)/image-20240110192331072.png">
+<meta property="og:image" content="https://limokii.github.io/2023/12/29/Parameter%20Efficient%20Fine-Tuning(PEFT)%E7%B3%BB%E5%88%97%E8%AE%BA%E6%96%87%E6%80%BB%E7%BB%93(%E4%B8%89)/image-20240110202455667.png">
+<meta property="og:image" content="https://limokii.github.io/2023/12/29/Parameter%20Efficient%20Fine-Tuning(PEFT)%E7%B3%BB%E5%88%97%E8%AE%BA%E6%96%87%E6%80%BB%E7%BB%93(%E4%B8%89)/image-20240112135538529.png">
+<meta property="article:published_time" content="2023-12-29T15:12:11.000Z">
+<meta property="article:modified_time" content="2024-01-12T05:56:58.809Z">
 <meta property="article:author" content="Okii">
 <meta property="article:tag" content="PEFT">
 <meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://limokii.github.io/2023/12/29/Parameter%20Efficient%20Fine-Tuning(PEFT)%E7%B3%BB%E5%88%97%E8%AE%BA%E6%96%87%E6%80%BB%E7%BB%93(%E4%B8%89)/image-20240110192331072.png">
 
-<link rel="canonical" href="https://limokii.github.io/2023/12/27/Parameter%20Efficient%20Fine-Tuning(PEFT)%E7%B3%BB%E5%88%97%E8%AE%BA%E6%96%87%E6%80%BB%E7%BB%93(%E4%B8%89)/">
+<link rel="canonical" href="https://limokii.github.io/2023/12/29/Parameter%20Efficient%20Fine-Tuning(PEFT)%E7%B3%BB%E5%88%97%E8%AE%BA%E6%96%87%E6%80%BB%E7%BB%93(%E4%B8%89)/">
 
 
 <script id="page-configurations">
@@ -122,7 +126,7 @@
   </li>
         <li class="menu-item menu-item-tags">
 
-    <a href="/tags/" rel="section"><i class="fa fa-fw fa-tags"></i>标签<span class="badge">7</span></a>
+    <a href="/tags/" rel="section"><i class="fa fa-fw fa-tags"></i>标签<span class="badge">8</span></a>
 
   </li>
         <li class="menu-item menu-item-categories">
@@ -132,7 +136,7 @@
   </li>
         <li class="menu-item menu-item-archives">
 
-    <a href="/archives/" rel="section"><i class="fa fa-fw fa-archive"></i>归档<span class="badge">9</span></a>
+    <a href="/archives/" rel="section"><i class="fa fa-fw fa-archive"></i>归档<span class="badge">10</span></a>
 
   </li>
       <li class="menu-item menu-item-search">
@@ -190,7 +194,7 @@
   
   
   <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
-    <link itemprop="mainEntityOfPage" href="https://limokii.github.io/2023/12/27/Parameter%20Efficient%20Fine-Tuning(PEFT)%E7%B3%BB%E5%88%97%E8%AE%BA%E6%96%87%E6%80%BB%E7%BB%93(%E4%B8%89)/">
+    <link itemprop="mainEntityOfPage" href="https://limokii.github.io/2023/12/29/Parameter%20Efficient%20Fine-Tuning(PEFT)%E7%B3%BB%E5%88%97%E8%AE%BA%E6%96%87%E6%80%BB%E7%BB%93(%E4%B8%89)/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
       <meta itemprop="image" content="/images/avatar.jpg">
@@ -213,7 +217,7 @@
               </span>
               <span class="post-meta-item-text">发表于</span>
 
-              <time title="创建时间：2023-12-27 23:12:11" itemprop="dateCreated datePublished" datetime="2023-12-27T23:12:11+08:00">2023-12-27</time>
+              <time title="创建时间：2023-12-29 23:12:11" itemprop="dateCreated datePublished" datetime="2023-12-29T23:12:11+08:00">2023-12-29</time>
             </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -231,14 +235,14 @@
                 <i class="fa fa-file-word-o"></i>
               </span>
                 <span class="post-meta-item-text">本文字数：</span>
-              <span>71</span>
+              <span>3.2k</span>
             </span>
             <span class="post-meta-item" title="阅读时长">
               <span class="post-meta-item-icon">
                 <i class="fa fa-clock-o"></i>
               </span>
                 <span class="post-meta-item-text">阅读时长 &asymp;</span>
-              <span>1 分钟</span>
+              <span>6 分钟</span>
             </span>
 
         </div>
@@ -252,6 +256,51 @@
       
         <p>承接上篇Parameter Efficient Fine-Tuning(PEFT)系列论文总结(二)，本篇主要介绍LoRA及其各种变体的微调方法。</p>
 <span id="more"></span>
+
+<h2 id="一、LoRA"><a href="#一、LoRA" class="headerlink" title="一、LoRA"></a>一、LoRA</h2><p>研究表明，语言模型针对特定任务微调之后，权重矩阵通常具有很低的本征秩 <code>（Intrinsic Rank）</code>。研究人员认为参数更新量即便投影到较小的子空间中，也不会影响学习的有效性。因此，提出固定预训练模型参数不变，在原本权重矩阵旁路添加低秩矩阵的乘积作为可训练参数，用以模拟参数的变化量。具体来说，假设预训练权重为${w_0\ \epsilon \ \mathbb{R}^{d<em>k}}$，可训练参数为${\varDelta W\ &#x3D;\ BA}$，其中${B\ \epsilon \ \mathbb{R}^{d</em>r} }$，${A\ \epsilon \ \mathbb{R}^{r*d}}$，初始化时，矩阵 ${A}$ 通过高斯函数初始化，矩阵${B}$ 为零初始化，使得训练开始之前旁路对原模型不造成影响，即参数改变量为 0。对于该权重的输入 ${x}$ 来说，输出为式${h\ &#x3D;\ W_0x+∆W\ x\ &#x3D;W_0x+BAx}$，<code>LoRA</code>算法结构方法如图：</p>
+<img src="/2023/12/29/Parameter%20Efficient%20Fine-Tuning(PEFT)%E7%B3%BB%E5%88%97%E8%AE%BA%E6%96%87%E6%80%BB%E7%BB%93(%E4%B8%89)/image-20240110192331072.png" alt="image-20240110192331072" style="zoom:80%;">
+
+<p>简言之，<code>LoRA</code>的核心思想是用一种低秩的方式来调整这些参数矩阵。在数学上，低秩意味着一个矩阵可以用两个较小的矩阵相乘来近似。</p>
+<p><strong>LoRA实现步骤如下：</strong></p>
+<p>1、选择目标层</p>
+<p>首先，在预训练神经网络模型中选择要应用<code>LoRA</code>的目标层。这些层通常是与特定任务相关的，如自注意力机制中的查询<code>Q</code>和键<code>K</code>矩阵</p>
+<p>值得注意的是，原则上，可以将<code>LoRA</code>应用于神经网络中权矩阵的任何子集，以减少可训练参数的数量。在<code>Transformer</code>体系结构中，<code>Self-Attetion</code>模块(<code>Wq</code>、<code>Wk</code>、<code>Wv</code>、<code>Wo</code>)中有四个权重矩阵，<code>MLP</code>模块中有两个权重矩阵。我们将<code>Wq</code>(或<code>Wk</code>，<code>Wv</code>)作为维度的单个矩阵，尽管输出维度通常被切分为注意力头。<br><em>(In principle, we can apply LoRA to any subset of weight matrices in a neural network to reduce th enumber of trainable parameters. In the Transformer architecture, there are four weight matrices in the self-attention module (Wq, Wk, Wv, Wo) and two in the MLP module. We treat Wq (or Wk, Wv)as a single matrix of dimension , even though the output dimension is usually sliced into attention heads)</em></p>
+<p>不过，为了简单和参数效率，将研究限制为仅适应下游任务的注意力权重，并冻结<code>MLP</code>模块(因此它们不接受下游任务的训练)</p>
+<p>(We limit our study to only adapting the attention weights for downstream tasks and freeze the MLP modules (so they are not trained in downstream tasks) both for simplicity and parameter-efficiency)<br>2、初始化映射矩阵和逆映射矩阵</p>
+<p>为目标层创建两个较小的矩阵<code>A</code>和<code>B</code>，然后进行变换</p>
+<p><code>A</code>是映射矩阵(一般用随机高斯分布初始化，维度上是降维）</p>
+<p><code>B</code>是逆映射矩阵(用0矩阵初始化)，维度上是升维</p>
+<p>之后做参数变换：将目标层的原始参数矩阵W通过映射矩阵<code>A</code>和逆映射矩阵<code>B</code>进行变换，计算公式为：<code>W&#39; = W + A * B</code>，这里<code>W&#39;</code>是变换后的参数矩阵</p>
+<p>3、微调模型</p>
+<p>使用新的参数矩阵<code>W&#39;</code>替换目标层的原始参数矩阵<code>W</code>，然后在特定任务的训练数据上对模型进行微调</p>
+<p>4、梯度更新</p>
+<p>在微调过程中，计算损失函数关于映射矩阵<code>A</code>和逆映射矩阵<code>B</code>的梯度，并使用优化算法(如<code>Adam</code>、<code>SGD</code>等)对<code>A</code>和<code>B</code>进行更新<br>注意，在更新过程中，原始参数矩阵<code>W</code>保持不变</p>
+<p>说白了，<strong>训练的时候固定原始PLM的参数，只训练降维矩阵A与升维矩阵B</strong></p>
+<p>且当需要切换到另一个下游任务时，可以通过减去<code>BA</code>然后添加不同的<code>B&#39;A&#39;</code>来恢复<code>W</code>，这是一个内存开销很小的快速操作*(When we need to switch to another downstream task, we can recover W0 by subtracting BA and then adding a different B0A0, a quick operation with very little memory overhead )*</p>
+<h2 id="二、AdaLoRA"><a href="#二、AdaLoRA" class="headerlink" title="二、AdaLoRA"></a>二、AdaLoRA</h2><p>从上文介绍的<code>LoRA</code>可以看出它的局限性：在一个模型的所有使用适配器的模块都使用了同一个<code>r</code>，但是无论是不同深度的参数，还是同一个深度不同模块的参数，它们在模型中的重要性都是不同的。例如下图的这两个例子，作者通过只对特定的模块进行微调，得出了不同参数的重要性的可视化结果。从中我们可以看出，自注意机制的全连接层要比计算 <code>Wq</code>，<code>Wk</code> ，<code>Wv</code>的权值重要，而更深层的参数要比更浅层的参数重要。</p>
+<img src="/2023/12/29/Parameter%20Efficient%20Fine-Tuning(PEFT)%E7%B3%BB%E5%88%97%E8%AE%BA%E6%96%87%E6%80%BB%E7%BB%93(%E4%B8%89)/image-20240110202455667.png" alt="image-20240110202455667" style="zoom:80%;">
+
+<p><strong>AdaLoRA的动机</strong></p>
+<p>因为在一个模型中，不同模块拥有着不同的贡献，那么在使用<code>LoRA</code>时如果我们能够根据它们重要性的不同为不同的模块分配不同的秩，那么将会带来很多好处。首先，我们为重要性更低的模块分配更小的秩，那么将有效的减少模型的计算量。其次，如果我们能够为更重要的特征分配更大的秩，那么将能够更有效的捕捉特征的细节信息。</p>
+<p>具体的过程数学要求有点高，先不看了</p>
+<p> <strong>总结</strong></p>
+<p><code>AdaLoRA</code>通过将所有添加了适配器的模块的秩的值看做了一组超参，然后通过模型剪枝的思想对<code>LoRA</code>的秩进行了自适应的计算。同时为了剪枝后模型效果的稳定，<code>AdaLoRA</code>使用<code>SVD</code>的三元组替代了<code>LoRA</code>的二元组，充分利用了<code>SVD</code>奇异矩阵的正交性和奇异向量的绝对值和特征重要性的相关性设计剪枝策略。</p>
+<h2 id="三、QLoRA"><a href="#三、QLoRA" class="headerlink" title="三、QLoRA"></a>三、QLoRA</h2><p>讲<code>QLoRA</code>之前，首先得明白什么是<strong>模型量化</strong></p>
+<p><strong>模型量化</strong>（Quantization）也被叫做模型的低精度表示，指的是在不大幅降低模型效果的前提下使用更低的精度来表示模型中的参数，从而缩减模型的体积和训练模型时占用的显存。量化的本质是函数映射，根据量化过程是否线性我们可以把量化分为<strong>线性量化</strong>和<strong>非线性量化</strong>。</p>
+<p>模型量化的核心工作就是在尽量保证模型准确率的前提下优化模型的推理速度和模型体积。</p>
+<p>与量化对应的是反量化（<code>Dequantization</code>），反量化指的是将模型的低精度恢复为高精度的过程，主要用于减少量化造成的精度损失</p>
+<p>简单来讲，模型量化是将浮点数值转化为定点数值，同时尽可能减少计算精度损失的方法。<br>模型量化是一种压缩网络参数的方式，它将神经网络的参数(<code>weight</code>)、激活值(<code>activation</code>)等原本用浮点表示的量值换用定点(整型)表示，在计算过程中，再将定点数据反量化回浮点数据，得到结果。</p>
+<p>我们可以对模型参数(<code>weight</code>)、激活值(<code>activation</code>)或者梯度(<code>gradient</code>)做量化。通常而言，模型的参数分布较为稳定，因此对参数 <code>weight</code> 做量化较为容易(比如，<code>QLoRA</code>便是对<code>weight</code>做量化)<br>至于模型的激活值往往存在异常值，直接对其做量化，会降低有效的量化格点数，导致精度损失严重，因此，激活值的量化需要更复杂的处理方法(如<code>SmoothQuant</code>)</p>
+<img src="/2023/12/29/Parameter%20Efficient%20Fine-Tuning(PEFT)%E7%B3%BB%E5%88%97%E8%AE%BA%E6%96%87%E6%80%BB%E7%BB%93(%E4%B8%89)/image-20240112135538529.png" alt="image-20240112135538529" style="zoom:80%;">
+
+
+
+<p><strong>QLoRA的工作有三个</strong></p>
+<p>1、结合了分位数量化和分块量化的<strong>4位标准浮点数量化</strong>（4-bit NormalFloat Quantization）</p>
+<p>2、对模型进行两次量化的<strong>双重量化</strong>（Double Quantization），它的第二次量化只作用在第一次量化产生的量化常数上，可以进一步节约显存占用</p>
+<p>3、<strong>分页优化</strong>（Paged Optimizer），使用<code>CPU</code>内存代替<code>GPU</code>显存保存部分梯度参数</p>
+<p>留到之后理解更深了再更新</p>
+
     </div>
 
     
@@ -266,7 +315,7 @@
   </li>
   <li class="post-copyright-link">
     <strong>本文链接：</strong>
-    <a href="https://limokii.github.io/2023/12/27/Parameter%20Efficient%20Fine-Tuning(PEFT)%E7%B3%BB%E5%88%97%E8%AE%BA%E6%96%87%E6%80%BB%E7%BB%93(%E4%B8%89)/" title="Parameter Efficient Fine-Tuning(PEFT)系列论文总结(三)">https://limokii.github.io/2023/12/27/Parameter Efficient Fine-Tuning(PEFT)系列论文总结(三)/</a>
+    <a href="https://limokii.github.io/2023/12/29/Parameter%20Efficient%20Fine-Tuning(PEFT)%E7%B3%BB%E5%88%97%E8%AE%BA%E6%96%87%E6%80%BB%E7%BB%93(%E4%B8%89)/" title="Parameter Efficient Fine-Tuning(PEFT)系列论文总结(三)">https://limokii.github.io/2023/12/29/Parameter Efficient Fine-Tuning(PEFT)系列论文总结(三)/</a>
   </li>
   <li class="post-copyright-license">
     <strong>版权声明： </strong>本博客所有文章除特别声明外，均采用 <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/" rel="noopener" target="_blank"><i class="fa fa-fw fa-creative-commons"></i>BY-NC-SA</a> 许可协议。转载请注明出处！
@@ -286,7 +335,7 @@
         
     <div class="post-nav">
       <div class="post-nav-item">
-    <a href="/2023/12/26/Parameter%20Efficient%20Fine-Tuning(PEFT)%E7%B3%BB%E5%88%97%E8%AE%BA%E6%96%87%E6%80%BB%E7%BB%93(%E4%BA%8C)/" rel="prev" title="Parameter Efficient Fine-Tuning(PEFT)系列论文总结(二)">
+    <a href="/2023/12/27/Parameter%20Efficient%20Fine-Tuning(PEFT)%E7%B3%BB%E5%88%97%E8%AE%BA%E6%96%87%E6%80%BB%E7%BB%93(%E4%BA%8C)/" rel="prev" title="Parameter Efficient Fine-Tuning(PEFT)系列论文总结(二)">
       <i class="fa fa-chevron-left"></i> Parameter Efficient Fine-Tuning(PEFT)系列论文总结(二)
     </a></div>
       <div class="post-nav-item">
@@ -351,6 +400,7 @@
 
       <!--noindex-->
       <div class="post-toc-wrap sidebar-panel">
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#%E4%B8%80%E3%80%81LoRA"><span class="nav-text">一、LoRA</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E4%BA%8C%E3%80%81AdaLoRA"><span class="nav-text">二、AdaLoRA</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E4%B8%89%E3%80%81QLoRA"><span class="nav-text">三、QLoRA</span></a></li></ol></div>
       </div>
       <!--/noindex-->
 
@@ -366,7 +416,7 @@
       <div class="site-state-item site-state-posts">
           <a href="/archives/">
         
-          <span class="site-state-item-count">9</span>
+          <span class="site-state-item-count">10</span>
           <span class="site-state-item-name">日志</span>
         </a>
       </div>
@@ -379,7 +429,7 @@
       <div class="site-state-item site-state-tags">
             <a href="/tags/">
           
-        <span class="site-state-item-count">7</span>
+        <span class="site-state-item-count">8</span>
         <span class="site-state-item-name">标签</span></a>
       </div>
   </nav>
