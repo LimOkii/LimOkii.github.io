@@ -1,0 +1,698 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 7.0.0">
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/logo.jpg">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/logo.jpg">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/logo.jpg">
+  <link rel="mask-icon" href="/images/logo.jpg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+<link rel="stylesheet" href="/lib/font-awesome/css/font-awesome.min.css">
+
+<script id="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"limokii.github.io","root":"/","scheme":"Pisces","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":false,"show_result":false,"style":null},"back2top":{"enable":true,"sidebar":false,"scrollpercent":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},"path":"search.xml"};
+  </script>
+
+  <meta name="description" content="本章是Transformers精讲，并配备哈佛版的基于Pytorch的实现代码">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Transformers 理解">
+<meta property="og:url" content="https://limokii.github.io/2023/06/27/Transformers/index.html">
+<meta property="og:site_name" content="Okii&#39;s blog">
+<meta property="og:description" content="本章是Transformers精讲，并配备哈佛版的基于Pytorch的实现代码">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="https://limokii.github.io/2023/06/27/Transformers/image-20240113204413171.png">
+<meta property="og:image" content="https://limokii.github.io/2023/06/27/Transformers/image-20240113204543371.png">
+<meta property="og:image" content="https://limokii.github.io/2023/06/27/Transformers/image-20240113204719720.png">
+<meta property="og:image" content="https://limokii.github.io/2023/06/27/Transformers/image-20240113204801613.png">
+<meta property="og:image" content="https://limokii.github.io/2023/06/27/Transformers/image-20240113205106009.png">
+<meta property="og:image" content="https://limokii.github.io/2023/06/27/Transformers/image-20240113205906204.png">
+<meta property="og:image" content="https://limokii.github.io/2023/06/27/Transformers/image-20240113211345136.png">
+<meta property="og:image" content="https://limokii.github.io/2023/06/27/Transformers/image-20240113211618648.png">
+<meta property="og:image" content="https://limokii.github.io/2023/06/27/Transformers/image-20240113211916839.png">
+<meta property="og:image" content="https://limokii.github.io/2023/06/27/Transformers/image-20240113212618490.png">
+<meta property="og:image" content="https://limokii.github.io/2023/06/27/Transformers/image-20240113213524039.png">
+<meta property="og:image" content="https://limokii.github.io/2023/06/27/Transformers/image-20240113213705835.png">
+<meta property="og:image" content="https://limokii.github.io/2023/06/27/Transformers/image-20240114201121264.png">
+<meta property="og:image" content="https://limokii.github.io/2023/06/27/Transformers/image-20240114201259276.png">
+<meta property="og:image" content="https://limokii.github.io/2023/06/27/Transformers/image-20240116133617842.png">
+<meta property="og:image" content="https://limokii.github.io/2023/06/27/Transformers/image-20240116133811713.png">
+<meta property="og:image" content="https://limokii.github.io/2023/06/27/Transformers/image-20240116134104328.png">
+<meta property="og:image" content="https://limokii.github.io/2023/06/27/Transformers/image-20240116134218698.png">
+<meta property="og:image" content="https://limokii.github.io/2023/06/27/Transformers/image-20240114162517162.png">
+<meta property="og:image" content="https://limokii.github.io/2023/06/27/Transformers/image-20240114162811559.png">
+<meta property="og:image" content="https://limokii.github.io/2023/06/27/Transformers/image-20240114162837902.png">
+<meta property="og:image" content="https://limokii.github.io/2023/06/27/Transformers/image-20240114195410034.png">
+<meta property="og:image" content="https://limokii.github.io/2023/06/27/Transformers/image-20240114195423850.png">
+<meta property="og:image" content="https://limokii.github.io/2023/06/27/Transformers/image-20240114195522326.png">
+<meta property="og:image" content="https://limokii.github.io/2023/06/27/Transformers/image-20240116135601496.png">
+<meta property="og:image" content="https://limokii.github.io/2023/06/27/Transformers/image-20240116135615871.png">
+<meta property="og:image" content="https://limokii.github.io/2023/06/27/Transformers/image-20240116135752823.png">
+<meta property="og:image" content="https://limokii.github.io/2023/06/27/Transformers/layernorm.png">
+<meta property="og:image" content="https://limokii.github.io/2023/06/27/Transformers/image-20240116150026767.png">
+<meta property="og:image" content="https://limokii.github.io/2023/06/27/Transformers/transformerdecode1.gif">
+<meta property="og:image" content="https://limokii.github.io/2023/06/27/Transformers/transformerdecode2.gif">
+<meta property="og:image" content="https://limokii.github.io/2023/06/27/Transformers/transformer24.png">
+<meta property="og:image" content="https://limokii.github.io/2023/06/27/Transformers/transformer25.png">
+<meta property="og:image" content="https://limokii.github.io/2023/06/27/Transformers/image-20240117145150356.png">
+<meta property="article:published_time" content="2023-06-27T15:12:11.000Z">
+<meta property="article:modified_time" content="2024-01-17T07:05:05.693Z">
+<meta property="article:author" content="Okii">
+<meta property="article:tag" content="Transformers">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://limokii.github.io/2023/06/27/Transformers/image-20240113204413171.png">
+
+<link rel="canonical" href="https://limokii.github.io/2023/06/27/Transformers/">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome : false,
+    isPost : true,
+    lang   : 'zh-CN'
+  };
+</script>
+
+  <title>Transformers 理解 | Okii's blog</title>
+  
+
+
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="container use-motion">
+    <div class="headband"></div>
+
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="切换导航栏">
+      <span class="toggle-line toggle-line-first"></span>
+      <span class="toggle-line toggle-line-middle"></span>
+      <span class="toggle-line toggle-line-last"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <span class="logo-line-before"><i></i></span>
+      <h1 class="site-title">Okii's blog</h1>
+      <span class="logo-line-after"><i></i></span>
+    </a>
+      <p class="site-subtitle" itemprop="description">仅作为记录自己的学习过程</p>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+        <i class="fa fa-search fa-fw fa-lg"></i>
+    </div>
+  </div>
+</div>
+
+
+
+
+<nav class="site-nav">
+  <ul id="menu" class="menu">
+        <li class="menu-item menu-item-home">
+
+    <a href="/" rel="section"><i class="fa fa-fw fa-home"></i>首页</a>
+
+  </li>
+        <li class="menu-item menu-item-tags">
+
+    <a href="/tags/" rel="section"><i class="fa fa-fw fa-tags"></i>标签<span class="badge">10</span></a>
+
+  </li>
+        <li class="menu-item menu-item-categories">
+
+    <a href="/categories/" rel="section"><i class="fa fa-fw fa-th"></i>分类<span class="badge">5</span></a>
+
+  </li>
+        <li class="menu-item menu-item-archives">
+
+    <a href="/archives/" rel="section"><i class="fa fa-fw fa-archive"></i>归档<span class="badge">11</span></a>
+
+  </li>
+      <li class="menu-item menu-item-search">
+        <a role="button" class="popup-trigger"><i class="fa fa-search fa-fw"></i>搜索
+        </a>
+      </li>
+  </ul>
+</nav>
+
+
+
+  <div class="search-pop-overlay">
+    <div class="popup search-popup">
+        <div class="search-header">
+  <span class="search-icon">
+    <i class="fa fa-search"></i>
+  </span>
+  <div class="search-input-container">
+    <input autocomplete="off" autocapitalize="off"
+           placeholder="搜索..." spellcheck="false"
+           type="search" class="search-input">
+  </div>
+  <span class="popup-btn-close">
+    <i class="fa fa-times-circle"></i>
+  </span>
+</div>
+<div id="search-result">
+  <div id="no-result">
+    <i class="fa fa-spinner fa-pulse fa-5x fa-fw"></i>
+  </div>
+</div>
+
+    </div>
+  </div>
+
+</div>
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+
+
+    <main class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+
+          <div class="content post posts-expand">
+            
+
+    
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="https://limokii.github.io/2023/06/27/Transformers/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.jpg">
+      <meta itemprop="name" content="Okii">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Okii's blog">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          Transformers 理解
+        </h1>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+
+              <time title="创建时间：2023-06-27 23:12:11" itemprop="dateCreated datePublished" datetime="2023-06-27T23:12:11+08:00">2023-06-27</time>
+            </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/%E8%AE%BA%E6%96%87/" itemprop="url" rel="index"><span itemprop="name">论文</span></a>
+                </span>
+            </span>
+
+          <br>
+            <span class="post-meta-item" title="本文字数">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-file-word-o"></i>
+              </span>
+                <span class="post-meta-item-text">本文字数：</span>
+              <span>12k</span>
+            </span>
+            <span class="post-meta-item" title="阅读时长">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-clock-o"></i>
+              </span>
+                <span class="post-meta-item-text">阅读时长 &asymp;</span>
+              <span>21 分钟</span>
+            </span>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        <p>本章是Transformers精讲，并配备哈佛版的基于Pytorch的实现代码</p>
+<span id="more"></span>
+
+<h2 id="一、宏观角度"><a href="#一、宏观角度" class="headerlink" title="一、宏观角度"></a>一、宏观角度</h2><p>1、首先将该模型视为一个黑匣子。 在机器翻译应用程序中，它将采用一种语言的句子，并以另一种语言输出其翻译。</p>
+<p><img src="/2023/06/27/Transformers/image-20240113204413171.png" alt="image-20240113204413171"></p>
+<p>2、继续瓦解，可以看到一个编码组件、一个解码组件以及它们之间的连接。</p>
+<p><img src="/2023/06/27/Transformers/image-20240113204543371.png" alt="image-20240113204543371"></p>
+<p>3、编码组件是一堆<code>Encoder</code>（论文将其中六个编码器堆叠在一起 - 6 没有什么神奇之处，绝对可以尝试其他排列）。 解码组件是相同数量的<code>Decoder</code>的堆栈。</p>
+<p><img src="/2023/06/27/Transformers/image-20240113204719720.png" alt="image-20240113204719720"></p>
+<p>4、这些编码器在结构上都是相同的（但它们不共享权重）。 每一层又分为两个子层：</p>
+<p><img src="/2023/06/27/Transformers/image-20240113204801613.png" alt="image-20240113204801613"><code>Encoder</code>的输入首先流经<code>Self-Attention</code>，该层帮助编码器在对特定单词进行编码时查看输入句子中的其他单词。 <code>Self-Attention</code>将在后续小节详细介绍。</p>
+<p><code>Self-Attention</code>的输出被馈送到前馈神经网络。 完全相同的前馈网络独立应用于每个位置。</p>
+<p>5、<code>Decoder</code>具有这两个层，但它们之间是一个注意力层，帮助解码器关注输入句子的相关部分（类似于 <code>seq2seq</code> 模型中注意力的作用）。</p>
+<p><img src="/2023/06/27/Transformers/image-20240113205106009.png" alt="image-20240113205106009"></p>
+<p>6、有了宏观的感受，再来看一下原论文中的图</p>
+<img src="/2023/06/27/Transformers/image-20240113205906204.png" alt="image-20240113205906204" style="zoom:67%;">
+
+<p>拆解完再回过来看是不是更清晰，接下来我将逐一介绍其中的各个模块，并配有<code>Pytorch</code>代码实现</p>
+<h2 id="二、Self-Attention"><a href="#二、Self-Attention" class="headerlink" title="二、Self-Attention"></a>二、Self-Attention</h2><h3 id="2-1-理论部分"><a href="#2-1-理论部分" class="headerlink" title="2.1 理论部分"></a>2.1 理论部分</h3><p>其实按照模型流程应该先介绍输入部分</p>
+<p>输入部分包括：<strong>词向量嵌入 +  位置向量嵌入</strong>（对应维度直接相加）</p>
+<p>但是，先讲完<code>Self-Attention</code>，你就会明白为什么光有词向量嵌入还不够，还需要位置向量嵌入</p>
+<p><strong>正式开始Self-Attention</strong></p>
+<p><img src="/2023/06/27/Transformers/image-20240113211345136.png" alt="image-20240113211345136"></p>
+<p>假设我们已经得到了模型的输入，每个单词都嵌入到大小为 512 的向量中。我将用这些简单的框表示这些向量</p>
+<p>将单词嵌入到输入序列中后，每个单词都会流经<code>Encoder</code>的两个子层。</p>
+<p><img src="/2023/06/27/Transformers/image-20240113211618648.png" alt="image-20240113211618648"></p>
+<p>接下来，我将示例切换为较短的句子，去查看编码器的每个子层中发生的情况</p>
+<p>正如已经提到的，<code>Encoder</code>接收向量列表作为输入。 它通过将这些向量传递到<code>Self-Attention</code>层，然后传递到前馈神经网络，然后将输出向上发送到下一个<code>Encoder</code>来处理该列表。</p>
+<p><img src="/2023/06/27/Transformers/image-20240113211916839.png" alt="image-20240113211916839"></p>
+<p><code>Self-Attention</code>即自注意力机制，感动陌生很正常，因为当时正是在这篇论文中提出的</p>
+<p>下面我将介绍到底什么叫自注意力机制</p>
+<p>假设以下句子是要翻译的输入句子：</p>
+<p>”<code>The animal didn&#39;t cross the street because it was too tired</code>”</p>
+<p>这句话中的<code>it</code>指的是什么？ 指的是街道还是动物？ 这对人类来说是一个简单的问题，但对算法来说就不那么简单了。</p>
+<p>当模型处理<code>it</code>这个词时，自注意力使其能够将<code>it</code>与“动物”联系起来。</p>
+<p>当模型处理每个单词（输入序列中的每个位置）时，自注意力允许它查看输入序列中的其他位置以寻找有助于更好地编码该单词的线索。</p>
+<p>你肯定还是不明白它是怎么做的，接下来是细节部分</p>
+<p>我们首先看看如何使用向量计算自注意力，然后继续看看它是如何实际实现的——使用矩阵。</p>
+<p>计算自注意力的第一步是从每个编码器的输入向量（在本例中为每个单词的嵌入）创建三个向量。 因此，对于每个单词，我们创建一个查询向量、一个键向量和一个值向量。 这些向量是通过将<strong>嵌入</strong>乘以我们在训练过程中训练的<strong>三个矩阵</strong>来创建的。</p>
+<p><img src="/2023/06/27/Transformers/image-20240113212618490.png" alt="image-20240113212618490"></p>
+<p>将 <code>x1 </code>乘以 <code>Wq</code> 权重矩阵会产生 <code>q1</code>，即与该单词关联的“查询”向量。 我们最终为输入句子中的每个单词创建一个“查询”、一个“键”和一个“值”投影。</p>
+<p>这里注意一下维度, 在论文中的<code>Embedding</code>维度<code>d_model = 512</code>，给出的<code>Key</code>维度和<code>Value</code>维度均为64</p>
+<p>即<code>d_k = d_v = d_model / h = 64</code>，那么对应<code>QKV</code>的矩阵<code>Wq</code>、<code>Wk</code>、<code>Wv</code>大小都应该是（512，64）</p>
+<p>这样就能根据输入得到一个查询向量<code>q1</code>，一组键值对<code>&lt;k1,v1&gt;</code></p>
+<p>有了<code>QKV</code>, 接下来需要按照<code>Attention</code>的流程计算<code>q1</code>和<code>k1</code>的<code>Score</code></p>
+<p> 根据论文中提到的<strong>缩放点积注意力</strong>(Scaled Dot-Product Attention):</p>
+<img src="/2023/06/27/Transformers/image-20240113213524039.png" alt="image-20240113213524039" style="zoom: 80%;">
+
+<p>先进行点积, 再进行缩放, 计算完<code>q1</code>与句中所有单词的<code>k1,k2……kn</code>的得分(这里采用点积得到)后, 再对<code>Score</code>除以根号下<code>d_k</code>, 完成缩放, 最后再通过<code>Softmax</code>得到<code>Attention</code>权重, 加权求和结果称为<code>z1</code></p>
+<p><img src="/2023/06/27/Transformers/image-20240113213705835.png" alt="image-20240113213705835"></p>
+<p>上面的讨论全部都是针对一个单词的, 但是在实际的运算中, 由于<code>Encoder</code>是线性<code>Stack</code>起来的, 所以其实<code>Encoder</code>的训练是可以并行的, 即<strong>多个单词做完Embedding后作为一个矩阵并行计算</strong>, 假设输入矩阵<code>X</code>，通过<code>Wq</code>、<code>Wk</code>、<code>Wv</code>计算后可以得到<code>Q、K、V</code>：</p>
+<img src="/2023/06/27/Transformers/image-20240114201121264.png" alt="image-20240114201121264" style="zoom:50%;">
+
+<p>最后，由于我们处理的是矩阵，我们可以将上述步骤压缩为一个公式来计算自注意力层的输出：</p>
+<p>​                                                                                        $$ Attention\left( Q,K,V \right) \ &#x3D;\ Soft\max \left( \frac{QK^T}{\sqrt[]{d_k}} \right) V $$ </p>
+<img src="/2023/06/27/Transformers/image-20240114201259276.png" alt="image-20240114201259276" style="zoom: 67%;">
+
+
+
+<p><strong>这里除以根号下 d_k 的解释</strong>：</p>
+<p>当<code>d_k</code>非常大时, 求得的内积可能会非常大, 如果不进行缩放, 不同的内积大小可能差异会非常大, <code>Softmax</code>在指数运算可能将梯度推到特别小, 导致梯度消失</p>
+<p>当 <code>d_k</code>较大时，很有可能存在某个 <code>key</code>，其与<code>query</code>计算出来的对齐分数远大于其他的<code>key</code>与该 <code>query</code>算出的对齐分数。这时，<code>softmax</code> 函数对另外的<code>qk</code>偏导数都趋于 0.</p>
+<p>这样结果就是，<code>softmax</code>函数梯度过低（趋于零），使得模型误差反向传播经过<code>softmax</code> 函数后无法继续传播到模型前面部分的参数上，造成这些参数无法得到更新，最终影响模型的训练效率</p>
+<h3 id="2-2-代码实现"><a href="#2-2-代码实现" class="headerlink" title="2.2 代码实现"></a>2.2 代码实现</h3><p><strong>Pytorch代码实现如下</strong></p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">def</span> <span class="title function_">attention</span>(<span class="params">query, key, value, mask=<span class="literal">None</span>, dropout=<span class="literal">None</span></span>):</span><br><span class="line">    d_k = query.size(-<span class="number">1</span>)</span><br><span class="line">    scores = torch.matmul(query, key.transpose(-<span class="number">2</span>, -<span class="number">1</span>))/math.sqrt(d_k)</span><br><span class="line">    <span class="keyword">if</span> mask <span class="keyword">is</span> <span class="keyword">not</span> <span class="literal">None</span>:</span><br><span class="line">        scores = scores.masked_fill(mask == <span class="number">0</span>, -<span class="number">1e9</span>)</span><br><span class="line">    p_attn = F.softmax(scores, dim=-<span class="number">1</span>)</span><br><span class="line">    <span class="keyword">if</span> dropout <span class="keyword">is</span> <span class="keyword">not</span> <span class="literal">None</span>:</span><br><span class="line">        p_attn = dropout(p_attn)</span><br><span class="line">    <span class="keyword">return</span> torch.matmul(p_attn, value), p_attn</span><br></pre></td></tr></table></figure>
+
+<ul>
+<li><p><code>query</code>，<code>key</code>，和 <code>value</code> 的维度是 <code>(batch_size, seq_len, d_model)</code>，其中 <code>seq_len</code> 是输入序列的长度，<code>d_model</code> 是模型的隐藏单元数</p>
+</li>
+<li><p>在线性映射的步骤中，<code>l(x).view(nbatches, -1, self.h, self.d_k).transpose(1, 2)</code> 使用了多头 (<code>self.h</code>) 和 <code>d_k</code>，它将 <code>query</code>，<code>key</code>，和 <code>value</code> 映射到了 <code>(batch_size, h, seq_len, d_k)</code> 的维度</p>
+</li>
+<li><p><code>torch.matmul(query, key.transpose(-2, -1))</code> 计算注意力分数，其中 <code>query</code> 和 <code>key</code> 经过了 <code>transpose</code> 操作以匹配维度，最终得到的分数维度是 <code>(batch_size, h, seq_len, seq_len)</code>，在最后两个维度的行上做了<code>softmax</code></p>
+</li>
+<li><p>在 <code>mask</code> 步骤中，如果有掩码，就使用 <code>scores.masked_fill(mask == 0, -1e9)</code> 将不应考虑的位置的分数设置为一个极小的值 <code>-1e9</code></p>
+</li>
+<li><p>通过 <code>F.softmax(scores, dim=-1)</code> 对分数进行<code>softmax</code> 操作，得到注意力权重 <code>p_attn</code>，其维度为 <code>(batch_size, h, seq_len, seq_len)</code></p>
+</li>
+<li><p><code>F.softmax(scores, dim=-1)</code>如果是一个二维的张量，<code>dim=0</code>表示在列上做<code>softmax</code>，<code>dim=1</code>表示在行上做<code>softmax</code></p>
+</li>
+<li><p>最后通过 <code>torch.matmul(p_attn, value)</code> 得到经过注意力权重调节后的值，其维度为 <code>(batch_size, h, seq_len, d_k)</code></p>
+<p><code>batch_size</code> 是每个 batch 的大小，<code>seq_len</code> 是序列的长度，<code>h</code> 是头数，<code>d_k</code> 是每个头的隐藏单元数。在多头注意力机制中，通过对头数进行拼接，最后的输出维度为 <code>(batch_size, seq_len, h * d_k)</code></p>
+<h3 id="2-3-多头注意力机制"><a href="#2-3-多头注意力机制" class="headerlink" title="2.3 多头注意力机制"></a>2.3 多头注意力机制</h3><p>多头的思路和<code>CNN</code>中的多个卷积核起到的作用明显是一致的. 所谓”多头”, 放在卷积神经网络里就是卷积层多个卷积核的特征提取过程, 在这里就是进行多次注意力的提取, 就像多个卷积核一样, 多次<strong>不同的初始化矩阵</strong>经过训练可能会有多种<strong>不同的特征,</strong> 每个头用于将输入嵌入投影到不同的表示子空间中，更有利于<strong>不同角度</strong>的特征抽取和信息提取。</p>
+<p><img src="/2023/06/27/Transformers/image-20240116133617842.png" alt="image-20240116133617842"></p>
+<p>通过多头注意力，为每个头维护单独的 <code>Q/K/V</code> 权重矩阵，从而产生不同的 <code>Q/K/V</code> 矩阵。 正如我们之前所做的那样，我们将 <code>X</code> 乘以 <code>WQ/WK/WV</code> 矩阵以生成 <code>Q/K/V</code> 矩阵。</p>
+<p><img src="/2023/06/27/Transformers/image-20240116133811713.png" alt="image-20240116133811713"></p>
+<p>如果进行与上面概述相同的自注意力计算，只是使用不同的权重矩阵进行八次不同的计算，我们最终会得到八个不同的 <code>Z </code>矩阵</p>
+<p>但是接下来的前馈层不需要八个矩阵——它需要一个矩阵（每个单词一个向量）</p>
+<p> 所以我们需要一种方法将这八个压缩成一个矩阵</p>
+<p>该怎么做呢？ 将矩阵连接起来，然后将它们乘以一个附加的权重矩阵 <code>Wo</code></p>
+<p><img src="/2023/06/27/Transformers/image-20240116134104328.png" alt="image-20240116134104328">这几乎就是多头自注意力的全部内容。 这是相当多的矩阵。 </p>
+<p>用下图进行汇总</p>
+<p><img src="/2023/06/27/Transformers/image-20240116134218698.png" alt="image-20240116134218698"></p>
+<p><strong>Pytorch代码实现如下</strong></p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">class</span> <span class="title class_">MultiHeadedAttention</span>(nn.Module):</span><br><span class="line">    <span class="keyword">def</span> <span class="title function_">__init__</span>(<span class="params">self, h, d_model, dropout=<span class="number">0.1</span></span>):</span><br><span class="line">        <span class="built_in">super</span>(MultiHeadedAttention, self).__init__()</span><br><span class="line">        <span class="comment"># 判断d - model % h是否有余数，如果有就报错</span></span><br><span class="line">        <span class="keyword">assert</span> d_model % h == <span class="number">0</span></span><br><span class="line">        <span class="comment"># d-model一般为512（序列符号的embedding长度），h是头数一般为8</span></span><br><span class="line">        self.h = h</span><br><span class="line">        <span class="comment"># 两者相除得到d_k的长度，即query、key矩阵中的列数</span></span><br><span class="line">        self.d_k = d_model // h</span><br><span class="line">        <span class="comment"># 这里定义的4个线性层, 相当于Wq、Wk、Wv、Wo四个投影矩阵</span></span><br><span class="line">        self.linears = clones(nn.Linear(d_model, d_model), <span class="number">4</span>)</span><br><span class="line">        self.attn = <span class="literal">None</span></span><br><span class="line">        self.dropout = nn.Dropout(p=dropout)</span><br><span class="line"></span><br><span class="line">    <span class="keyword">def</span> <span class="title function_">forward</span>(<span class="params">self, query, key, value, mask=<span class="literal">None</span></span>):</span><br><span class="line">        <span class="keyword">if</span> mask <span class="keyword">is</span> <span class="keyword">not</span> <span class="literal">None</span>:</span><br><span class="line">            <span class="comment"># Same mask applied to all h heads.</span></span><br><span class="line">            mask = mask.unsqueeze(<span class="number">1</span>)</span><br><span class="line">        nbatches = query.size(<span class="number">0</span>)</span><br><span class="line"></span><br><span class="line">        <span class="comment"># 1) Do all the linear projections in batch from d_model =&gt; h x d_k</span></span><br><span class="line">        <span class="comment"># zip中的(query, key, value)相当于原始的输入, 即 词嵌入 + 位置嵌入</span></span><br><span class="line">        <span class="comment"># l(x) 相当于原始嵌入输入过了Wq、Wk、Wv三个映射矩阵得到query, key, value</span></span><br><span class="line">        <span class="comment"># 然后再reshape到 nbatches * head * seq_len * d_k(64)</span></span><br><span class="line">        query, key, value = [l(x).view(nbatches, -<span class="number">1</span>, self.h, self.d_k).transpose(<span class="number">1</span>, <span class="number">2</span>) <span class="keyword">for</span> l, x <span class="keyword">in</span> <span class="built_in">zip</span>(self.linears, (query, key, value))]</span><br><span class="line">        <span class="comment"># 2) Apply attention on all the projected vectors in batch.</span></span><br><span class="line">        x, self.attn = attention(query, key, value, mask=mask, dropout=self.dropout)</span><br><span class="line"></span><br><span class="line">        <span class="comment"># 3) &quot;Concat&quot; using a view and apply a final linear.</span></span><br><span class="line">        x = x.transpose(<span class="number">1</span>, <span class="number">2</span>).contiguous().view(nbatches, -<span class="number">1</span>, self.h * self.d_k)</span><br><span class="line">        <span class="keyword">return</span> self.linears[-<span class="number">1</span>](x)</span><br></pre></td></tr></table></figure></li>
+</ul>
+<h2 id="三、Positional-Encoding"><a href="#三、Positional-Encoding" class="headerlink" title="三、Positional Encoding"></a>三、Positional Encoding</h2><h3 id="3-1-理论部分"><a href="#3-1-理论部分" class="headerlink" title="3.1 理论部分"></a>3.1 理论部分</h3><p>正式因为<code>Transformer</code>采用了纯粹的<code>Attention</code>结构, 不像<code>RNN</code>一样能够通过时间步来反映句子中单词的前后关系, 即不能得知<strong>位置信息</strong>。要知道, 在<code>NLP</code>任务中, <strong>语序</strong>是一个相当重要的属性, 所以必须要通过某种方式让<code>Transformer</code>得知单词的位置, 作者通过<strong>位置编码</strong>在每次进入<code>Encoder</code>和<code>Decoder</code>前将位置信息写入。这样来看, 与其叫位置编码, 不如叫<strong>位置嵌入</strong>。</p>
+<p>位置编码可以直接与<code>Embedding</code>的向量相加:</p>
+<p><img src="/2023/06/27/Transformers/image-20240114162517162.png" alt="image-20240114162517162"></p>
+<p>那这个位置编码是怎么得到的呢？</p>
+<p>作者的做法非常有意思, 对不同的单词位置, 不同的<code>Embedding</code>维度, 它的编码都是<strong>唯一</strong>的, 应用正弦和余弦函数也方便<code>Transformer</code>学到位置的特征. 如果将当前单词位置记为<code>pos</code>, 而词向量的某个维度记为<code>i</code>, 那么位置编码的方法为:</p>
+<p><img src="/2023/06/27/Transformers/image-20240114162811559.png" alt="image-20240114162811559"></p>
+<p>如果我们假设嵌入的维数为<code>4</code>，则实际的位置编码将如下所示：</p>
+<p><img src="/2023/06/27/Transformers/image-20240114162837902.png" alt="image-20240114162837902"></p>
+<p>根据上述<code>PE</code>的位置编码公式，在这个式子中, 编码周期不受单词位置影响, 仅仅与模型开始设计的<code>d_model</code><br> 和<code>Embedding</code>的不同维度<code>i</code>相关</p>
+<p>对于不同的<code>i</code>，根据三角函数的周期公式<code>T = 2Π / w</code>，<code>i</code>的范围是[0，256]</p>
+<p>可以得到<code>PE</code>的的周期变化范围是<code>[2Π，10000 * 2Π ]</code></p>
+<p>这样看，同一位置上的词语, 对于不同的<code>Embedding</code>维度, 都得到不同的编码, 并且随着<code>i</code>的增大, 位置编码的值的变化就越来越慢. 这种编码对于不同维度的<code>Embedding</code>来说是<strong>唯一</strong>的, 因此模型能够学习到关于<code>Embedding</code>的位置信息。</p>
+<p>为什么会选择如上公式呢？作者表示：</p>
+<p><img src="/2023/06/27/Transformers/image-20240114195410034.png" alt="image-20240114195410034"></p>
+<p>已知三角函数公式如下：</p>
+<p><img src="/2023/06/27/Transformers/image-20240114195423850.png" alt="image-20240114195423850"></p>
+<p>偏移<code>k</code>后，得到的<code>PE</code>如下：</p>
+<p><img src="/2023/06/27/Transformers/image-20240114195522326.png" alt="image-20240114195522326"></p>
+<p>作者希望借助上述绝对位置的编码公式，让模型能够学习到相对位置信息</p>
+<h3 id="3-2-代码实现"><a href="#3-2-代码实现" class="headerlink" title="3.2 代码实现"></a>3.2 代码实现</h3><p><strong>Pytorch代码实现如下</strong></p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">class</span> <span class="title class_">Embeddings</span>(nn.Module):</span><br><span class="line">    <span class="keyword">def</span> <span class="title function_">__init__</span>(<span class="params">self, d_model, vocab</span>):</span><br><span class="line">        <span class="built_in">super</span>(Embeddings, self).__init__()</span><br><span class="line">        self.lut = nn.Embedding(vocab, d_model)</span><br><span class="line">        self.d_model = d_model</span><br><span class="line"></span><br><span class="line">    <span class="keyword">def</span> <span class="title function_">forward</span>(<span class="params">self, x</span>):</span><br><span class="line">        <span class="keyword">return</span> self.lut(x) * math.sqrt(self.d_model)</span><br><span class="line"></span><br><span class="line"></span><br><span class="line"><span class="keyword">class</span> <span class="title class_">PositionalEncoding</span>(nn.Module):</span><br><span class="line">    <span class="keyword">def</span> <span class="title function_">__init__</span>(<span class="params">self, d_model, dropout, max_len=<span class="number">5000</span></span>):</span><br><span class="line">        <span class="built_in">super</span>(PositionalEncoding, self).__init__()</span><br><span class="line">        self.dropout = nn.Dropout(p=dropout)</span><br><span class="line">        <span class="comment"># pe (5000 * 512)</span></span><br><span class="line">        pe = torch.zeros(max_len, d_model)</span><br><span class="line">        <span class="comment"># position (5000 * 1)</span></span><br><span class="line">        position = torch.arange(<span class="number">0</span>, max_len).unsqueeze(<span class="number">1</span>)</span><br><span class="line">        <span class="comment"># div_term (256 * 1)</span></span><br><span class="line">        div_term = torch.exp(torch.arange(<span class="number">0</span>, d_model, <span class="number">2</span>) *</span><br><span class="line">                             -(math.log(<span class="number">10000.0</span>) / d_model))</span><br><span class="line">        <span class="comment"># 偶数列</span></span><br><span class="line">        pe[:, <span class="number">0</span>::<span class="number">2</span>] = torch.sin(position * div_term)</span><br><span class="line">        <span class="comment"># 奇数列</span></span><br><span class="line">        pe[:, <span class="number">1</span>::<span class="number">2</span>] = torch.cos(position * div_term)</span><br><span class="line">        <span class="comment"># [1, max_len, d_model]</span></span><br><span class="line">        <span class="comment"># pe (1 * 5000 * 512)</span></span><br><span class="line">        pe = pe.unsqueeze(<span class="number">0</span>)</span><br><span class="line">        self.register_buffer(<span class="string">&#x27;pe&#x27;</span>, pe)</span><br><span class="line"></span><br><span class="line">    <span class="keyword">def</span> <span class="title function_">forward</span>(<span class="params">self, x</span>):</span><br><span class="line">        <span class="comment"># 输入的最终编码 = word_embedding + positional_embedding</span></span><br><span class="line">        x = x + self.pe[:, :x.size(<span class="number">1</span>)].detach()</span><br><span class="line">        <span class="keyword">return</span> self.dropout(x)</span><br></pre></td></tr></table></figure>
+
+
+
+<h2 id="四、Residuals-LN-FFN"><a href="#四、Residuals-LN-FFN" class="headerlink" title="四、Residuals + LN + FFN"></a>四、Residuals + LN + FFN</h2><p>在继续之前，需要提及<code>Encoder</code>架构中的一个细节，即每个编码器中的每个子层（自注意力，<code>ffnn</code>）周围都有一个残差连接，并且后面是层归一化步骤。</p>
+<h3 id="4-1-残差连接"><a href="#4-1-残差连接" class="headerlink" title="4.1 残差连接"></a>4.1 残差连接</h3><p><img src="/2023/06/27/Transformers/image-20240116135601496.png" alt="image-20240116135601496"></p>
+<p>如果要可视化与自注意力相关的向量和层归一化操作，如下图：</p>
+<p><img src="/2023/06/27/Transformers/image-20240116135615871.png" alt="image-20240116135615871"></p>
+<p>这也适用于<code>Decoder</code>的子层。 如果我们考虑一个由 <code>2</code> 个堆叠编码器和解码器组成的 <code>Transformer</code>，它看起来会是这样的：</p>
+<p><img src="/2023/06/27/Transformers/image-20240116135752823.png" alt="image-20240116135752823"></p>
+<h3 id="4-2-层归一化"><a href="#4-2-层归一化" class="headerlink" title="4.2 层归一化"></a>4.2 层归一化</h3><p><code>Layer Norm</code>也是一种类似于<code>Batch Norm</code>的归一化方式, 同样能起到加快收敛的作用, 在<strong>NLP任务</strong>中比较常用</p>
+<p><code>Batch Norm</code>中, 记录下一个<code>Batch</code>中每维<code>Feature</code>的均值和方差, 并进行放缩和平移, 即对<strong>不同样本的同一个通道特征</strong>进行归一化</p>
+<p>在<code>Layer Norm</code>中, 只是换了一个维度, 我们对<strong>同一个样本的不同通道</strong>进行归一化</p>
+<p><img src="/2023/06/27/Transformers/layernorm.png" alt="img"></p>
+<p><strong>BN和LN的区别：</strong></p>
+<p><strong>主要区别在于 normalization的方向不同！</strong></p>
+<p><code>Batch</code>顾名思义是对一个<code>batch</code>进行操作。假设我们有 10行 3列 的数据，即我们的<code>batchsize = 10</code>，每一行数据有三个特征，假设这三个特征是**[身高、体重、年龄]<strong>。那么<code>BN</code>是针对每一列（特征）进行缩放，例如算出</strong>[身高]**的均值与方差，再对身高这一列的10个数据进行缩放。体重和年龄同理。这是一种“列缩放”。</p>
+<p>而<code>layer</code>方向相反，它针对的是每一行进行缩放。即只看一笔数据，算出这笔所有特征的均值与方差再缩放。这是一种“行缩放”。</p>
+<p>细心的你已经看出来，<code>layer normalization</code>对所有的特征进行缩放，这显得很没道理。我们算出一行这**[身高、体重、年龄]**三个特征的均值方差并对其进行缩放，事实上会因为特征的量纲不同而产生很大的影响。但是<code>BN</code>则没有这个影响，因为<code>BN</code>是对一列进行缩放，一列的量纲单位都是相同的。</p>
+<p>那么我们为什么还要使用<code>LN</code>呢？因为<code>NLP</code>领域中，<code>LN</code>更为合适。</p>
+<p>如果我们将一批文本组成一个<code>batch</code>，那么<code>BN</code>的操作方向是，对每句话的<strong>第一个</strong>词进行操作。但语言文本的复杂性是很高的，任何一个词都有可能放在初始位置，且词序可能并不影响我们对句子的理解。而<code>BN</code>是<strong>针对每个位置</strong>进行缩放，这<strong>不符合NLP的规律</strong>。</p>
+<p>而<code>LN</code>则是针对一句话进行缩放的，且<strong>LN一般用在第三维度</strong>，如<code>[batchsize, seq_len, dims]</code>中的<code>dims</code>，一般为词向量的维度，或者是<code>RNN</code>的输出维度等等，这一维度各个特征的量纲应该相同。因此也不会遇到上面因为特征的量纲不同而导致的缩放问题。</p>
+<p><img src="/2023/06/27/Transformers/image-20240116150026767.png" alt="image-20240116150026767"></p>
+<p><code>BN</code> 感觉是对样本内部特征的缩放，<code>LN </code>是样本直接之间所有特征的缩放。为啥<code>BN</code>不适合<code>NLP</code> 是因为NLP模型训练里的每次输入的句子都是多个句子，并且长度不一，那么 针对每一句的缩放才更加合理，才能表达每个句子之间代表不同的语义表示，这样让模型更加能捕捉句子之间的上下语义关系。如果要用<code>BN</code>，它首先要面临的长度不一的问题。有时候<code>batch size</code>越小的<code>bn</code>效果更不好</p>
+<h3 id="4-3-代码实现"><a href="#4-3-代码实现" class="headerlink" title="4.3 代码实现"></a>4.3 代码实现</h3><p><strong>Pytorch代码实现如下</strong></p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">class</span> <span class="title class_">LayerNorm</span>(nn.Module):</span><br><span class="line">    <span class="keyword">def</span> <span class="title function_">__init__</span>(<span class="params">self, features, eps=<span class="number">1e-6</span></span>):</span><br><span class="line">        <span class="built_in">super</span>(LayerNorm, self).__init__()</span><br><span class="line">        <span class="comment"># 层归一化后, 引入这两个可学习参数</span></span><br><span class="line">        <span class="comment"># Layer Normalization 能够更灵活地适应不同的数据分布</span></span><br><span class="line">        <span class="comment"># 练过程中，这两个参数会通过反向传播进行更新，以最优化模型的性能</span></span><br><span class="line">        self.a_2 = nn.Parameter(torch.ones(features))</span><br><span class="line">        self.b_2 = nn.Parameter(torch.zeros(features))</span><br><span class="line">        self.eps = eps</span><br><span class="line"></span><br><span class="line">    <span class="keyword">def</span> <span class="title function_">forward</span>(<span class="params">self, x</span>):</span><br><span class="line">       <span class="comment"># mean, std的计算在最后一个维度（emb_dim）上进行的</span></span><br><span class="line">        mean = x.mean(-<span class="number">1</span>, keepdim=<span class="literal">True</span>)</span><br><span class="line">        std = x.std(-<span class="number">1</span>, keepdim=<span class="literal">True</span>)</span><br><span class="line">        <span class="comment"># 对 x - mean 和 (std + self.eps) 的运算仍然是逐元素的，维度与输入张量 x 一致</span></span><br><span class="line">        <span class="comment"># 最终返回的 self.a_2 * (x - mean) / (std + self.eps) + self.b_2 </span></span><br><span class="line">		<span class="comment"># 的形状为(batch_size, seq_len, emb_dim)</span></span><br><span class="line">        <span class="keyword">return</span> self.a_2 * (x - mean) / (std + self.eps) + self.b_2</span><br><span class="line"></span><br><span class="line"><span class="comment"># Encoder输出和最后进入FFN之前的Residual+LN</span></span><br><span class="line"><span class="keyword">class</span> <span class="title class_">SublayerConnection</span>(nn.Module):</span><br><span class="line"></span><br><span class="line">    <span class="keyword">def</span> <span class="title function_">__init__</span>(<span class="params">self, size, dropout</span>):</span><br><span class="line">        <span class="built_in">super</span>(SublayerConnection, self).__init__()</span><br><span class="line">        self.norm = LayerNorm(size)</span><br><span class="line">        self.dropout = nn.Dropout(dropout)</span><br><span class="line"></span><br><span class="line">    <span class="keyword">def</span> <span class="title function_">forward</span>(<span class="params">self, x, sublayer</span>):</span><br><span class="line">        <span class="keyword">return</span> x + self.dropout(sublayer(self.norm(x)))</span><br><span class="line"></span><br><span class="line">    </span><br><span class="line"><span class="keyword">class</span> <span class="title class_">PositionwiseFeedForward</span>(nn.Module):</span><br><span class="line">    <span class="keyword">def</span> <span class="title function_">__init__</span>(<span class="params">self, d_model, d_ff, dropout=<span class="number">0.1</span></span>):</span><br><span class="line">        <span class="built_in">super</span>(PositionwiseFeedForward, self).__init__()</span><br><span class="line">        self.w_1 = nn.Linear(d_model, d_ff)</span><br><span class="line">        self.w_2 = nn.Linear(d_ff, d_model)</span><br><span class="line">        self.dropout = nn.Dropout(dropout)</span><br><span class="line"></span><br><span class="line">    <span class="keyword">def</span> <span class="title function_">forward</span>(<span class="params">self, x</span>):</span><br><span class="line">        <span class="keyword">return</span> self.w_2(self.dropout(F.relu(self.w_1(x))))</span><br></pre></td></tr></table></figure>
+
+
+
+<h2 id="五、Decoder"><a href="#五、Decoder" class="headerlink" title="五、Decoder"></a>五、Decoder</h2><h3 id="5-1-理论部分"><a href="#5-1-理论部分" class="headerlink" title="5.1 理论部分"></a>5.1 理论部分</h3><p>现在我们已经涵盖了<code>Encoder</code>方面的大部分概念，我们基本上也知道了解码器的组件是如何工作的</p>
+<p>但让我们看看它们是如何协同工作的</p>
+<p><code>Encoder</code>首先处理输入序列。 然后，顶部<code>Decoder</code>的输出被转换为一组注意力向量<code>K</code>和<code> V</code>。这些向量将由每个<code>Decoder</code>在其<code>Encoder-Decoder Attention</code>层中使用，这有助于<code>Decoder</code>关注输入序列中的适当位置：</p>
+<p><img src="/2023/06/27/Transformers/transformerdecode1.gif" alt="img"></p>
+<p>以下步骤重复该过程，直到到达特殊符号，指示<code>Decoder</code>已完成其输出。 每个步骤的输出在下一个时间步骤中被馈送到底部<code>Decoder</code>，并且<code>Decoder</code>像编码器一样冒泡其解码结果</p>
+<p><img src="/2023/06/27/Transformers/transformerdecode2.gif" alt="img"></p>
+<p>我们将位置编码嵌入并添加到这些<code>Decoder</code>输入中以指示每个单词的位置，这和处理<code>Encoder</code>的输入时一样</p>
+<p><strong>但是我们要知道<code>Decoder</code>中的<code>Attention</code>层的运行方式与<code>Encoder</code>中的运行方式略有不同：</strong></p>
+<p>在<code>Decoder</code>中，<code>Attention</code>层只允许关注输出序列中较早的位置。 这是通过在自注意力计算中的 <code>softmax </code>步骤之前屏蔽未来位置（将它们设置为 -inf）来完成的，因为在推理的时候肯定不能看到后面的结果</p>
+<p><strong>“Encoder-Decoder Attention”层的工作方式与多头自注意力类似，只不过它从其下面的层创建查询矩阵，并从Encoder最后一层的输出中获取键和值矩阵</strong></p>
+<p>若仍然沿用传统<code>Seq2Seq+RNN</code>的思路, Decoder是一个<strong>顺序操作</strong>的结构, 我们代入一个场景来看看。假设我们要执行<strong>机器翻译</strong>任务, 要将<code>我 是 学生</code>翻译为<code>I am Student</code>, 假设所有参数与论文中提到的参数一样, <code>batch size</code>视为1. 根据前面已知的知识, <code>Encoder</code>堆叠后的输入和<code>Embedding</code>的大小是相同的</p>
+<p>在这里有三个词语, <code>Embedding</code>且通过<code>Encoder</code>后的编码大小为<code>(3,512)</code>。下面对<code>Decoder</code>进行训练:</p>
+<ol>
+<li>将起始符<code>&lt;start&gt;</code> 作为初始Decoder输入, 经过Decoder处理和分类得到输出<code>I</code>.</li>
+<li>将<code>&lt;start&gt; I</code>作为Decoder输入, 经过Decoder处理和分类得到输出<code>am</code>.</li>
+<li>将<code>&lt;start&gt; I am</code>作为Decoder输入, 经过Decoder处理和分类得到输出<code>Student</code>.</li>
+<li>将<code>&lt;start&gt; I am student</code>作为Decoder输入, 经过Decoder处理和分类得到结束符<code>&lt;end&gt;</code>.</li>
+</ol>
+<p>这种预测的方式也称为<strong>自回归</strong></p>
+<p>如果想做到<strong>并行</strong>训练, 需要将上面的过程转化为一个这样的矩阵直接作为<code>Decoder</code>的输入</p>
+<p>因为在<strong>训练时已知任务标签</strong>, 所以可以产生类似的效果，这种方法被称为<code>Teacher Forcing</code></p>
+<p>在论文的图中, <code>Mask</code>操作顺序被放在<code>Q</code>和<code>K</code>计算并缩放后, <code>Softmax</code>计算前。如果继续计算下去, 不做<code>Mask</code>, 与<code>V</code>相乘后得到<code>Attention</code>, 所有时间步信息全部都被泄露给<code>Decoder</code>, 必须用<code>Mask</code>将当前预测的单词信息和之后的单词信息全部遮住。</p>
+<p>遮住的方法非常简单, 首先不能使用<code>0</code>进行遮盖, 因为<code>Softmax</code>中用零填充会产生错误, <code>e^0=1</code>. 所以必须要用<code>−∞</code>来填充那些不能被看见的部分. 我们直接生成一个下三角全为<code>0</code>, 上三角全部为<strong>负无穷</strong>的矩阵, 与原数据相加就能完成遮盖的效果</p>
+<p><img src="/2023/06/27/Transformers/transformer24.png" alt="img"></p>
+<p>做<code>Softmax</code>时, 所有的负无穷全变成了<code>0</code>, 不再干扰计算:</p>
+<p><img src="/2023/06/27/Transformers/transformer25.png" alt="img"></p>
+<p>其实<code>Mask</code>在对句子的<strong>无效部分<pad>填充</pad></strong>时, 也是用同样方法将所有句子补齐, 无效部分用负无穷填充的</p>
+<p><strong>PS:</strong><code>Decoder</code>仍然依赖与先前输出结果作为输入, 所以在正式使用时不能实现并行预测, 但在训练的时结果是已知的, 可以实现并行训练</p>
+<h3 id="5-2-代码实现"><a href="#5-2-代码实现" class="headerlink" title="5.2 代码实现"></a>5.2 代码实现</h3><p><strong>Pytorch代码实现如下</strong></p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">class</span> <span class="title class_">Decoder</span>(nn.Module):</span><br><span class="line">    <span class="string">&quot;Generic N layer decoder with masking.&quot;</span></span><br><span class="line"></span><br><span class="line">    <span class="keyword">def</span> <span class="title function_">__init__</span>(<span class="params">self, layer, N</span>):</span><br><span class="line">        <span class="built_in">super</span>(Decoder, self).__init__()</span><br><span class="line">        self.layers = clones(layer, N)</span><br><span class="line">        self.norm = LayerNorm(layer.size)</span><br><span class="line"></span><br><span class="line">    <span class="keyword">def</span> <span class="title function_">forward</span>(<span class="params">self, x, memory, src_mask, tgt_mask</span>):</span><br><span class="line">        <span class="keyword">for</span> layer <span class="keyword">in</span> self.layers:</span><br><span class="line">            x = layer(x, memory, src_mask, tgt_mask)</span><br><span class="line">        <span class="keyword">return</span> self.norm(x)</span><br></pre></td></tr></table></figure>
+
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">class</span> <span class="title class_">DecoderLayer</span>(nn.Module):</span><br><span class="line">    <span class="string">&quot;Decoder is made of self-attn, src-attn, and feed forward (defined below)&quot;</span></span><br><span class="line"></span><br><span class="line">    <span class="keyword">def</span> <span class="title function_">__init__</span>(<span class="params">self, size, self_attn, src_attn, feed_forward, dropout</span>):</span><br><span class="line">        <span class="built_in">super</span>(DecoderLayer, self).__init__()</span><br><span class="line">        self.size = size</span><br><span class="line">        self.self_attn = self_attn</span><br><span class="line">        self.src_attn = src_attn</span><br><span class="line">        self.feed_forward = feed_forward</span><br><span class="line">        self.sublayer = clones(SublayerConnection(size, dropout), <span class="number">3</span>)</span><br><span class="line"></span><br><span class="line">    <span class="keyword">def</span> <span class="title function_">forward</span>(<span class="params">self, x, memory, src_mask, tgt_mask</span>):</span><br><span class="line">        <span class="string">&quot;Follow Figure 1 (right) for connections.&quot;</span></span><br><span class="line">        m = memory</span><br><span class="line">        <span class="comment"># 第一个attention是自注意力，Q，K，V 都是 x</span></span><br><span class="line">        <span class="comment"># 第二个attention的Q是上一层自注意力汇聚输出的x，K和V都是encoder编码的memory</span></span><br><span class="line">        x = self.sublayer[<span class="number">0</span>](x, <span class="keyword">lambda</span> x: self.self_attn(x, x, x, tgt_mask))</span><br><span class="line">        x = self.sublayer[<span class="number">1</span>](x, <span class="keyword">lambda</span> x: self.src_attn(x, m, m, src_mask))</span><br><span class="line">        <span class="keyword">return</span> self.sublayer[<span class="number">2</span>](x, self.feed_forward)</span><br></pre></td></tr></table></figure>
+
+<h2 id="六、The-Final-Linear-and-Softmax-Layer"><a href="#六、The-Final-Linear-and-Softmax-Layer" class="headerlink" title="六、The Final Linear and Softmax Layer"></a>六、The Final Linear and Softmax Layer</h2><p><code>Decoder</code>堆栈输出浮点数向量。 我们如何把它变成一个词？ </p>
+<p>这就是最后一个<code>Linear</code>层的工作，后面是 <code>Softmax</code> 层</p>
+<p>线性层是一个简单的全连接神经网络，它将<code>Decoder</code>堆栈产生的向量投影到一个更大的向量中，称为<code>logits</code>向量</p>
+<p>假设我们的模型知道从训练数据集中学习的 10000 个独特的英语单词（我们模型的“输出词汇”）</p>
+<p> 这将使 <code>logits</code> 向量有 10000 个单元格宽——每个单元格对应一个唯一单词的分数。 这就是我们解释线性层模型输出的方式。</p>
+<p>然后，<code>Softmax</code> 层将这些分数转换为概率（全部为正，全部加起来为 1.0）。 选择概率最高的单元格，并生成与其关联的单词作为该时间步的输出。</p>
+<p><img src="/2023/06/27/Transformers/image-20240117145150356.png" alt="image-20240117145150356"></p>
+
+    </div>
+
+    
+    
+    
+        
+
+<div>
+<ul class="post-copyright">
+  <li class="post-copyright-author">
+    <strong>本文作者： </strong>Okii
+  </li>
+  <li class="post-copyright-link">
+    <strong>本文链接：</strong>
+    <a href="https://limokii.github.io/2023/06/27/Transformers/" title="Transformers 理解">https://limokii.github.io/2023/06/27/Transformers/</a>
+  </li>
+  <li class="post-copyright-license">
+    <strong>版权声明： </strong>本博客所有文章除特别声明外，均采用 <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/" rel="noopener" target="_blank"><i class="fa fa-fw fa-creative-commons"></i>BY-NC-SA</a> 许可协议。转载请注明出处！
+  </li>
+</ul>
+</div>
+
+
+      <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/tags/Transformers/" rel="tag"># Transformers</a>
+          </div>
+
+        
+
+
+        
+    <div class="post-nav">
+      <div class="post-nav-item"></div>
+      <div class="post-nav-item">
+    <a href="/2023/12/13/Hexo%20+%20Typora%20+%20Github%20%E5%8D%9A%E5%AE%A2%E6%90%AD%E5%BB%BA/" rel="next" title="Hexo + Typora + Github 博客搭建">
+      Hexo + Typora + Github 博客搭建 <i class="fa fa-chevron-right"></i>
+    </a></div>
+    </div>
+      </footer>
+    
+  </article>
+  
+  
+  
+
+
+
+          </div>
+          
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let { activeClass } = CONFIG.comments;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      let activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      let commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+        </div>
+          
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          文章目录
+        </li>
+        <li class="sidebar-nav-overview">
+          站点概览
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#%E4%B8%80%E3%80%81%E5%AE%8F%E8%A7%82%E8%A7%92%E5%BA%A6"><span class="nav-text">一、宏观角度</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E4%BA%8C%E3%80%81Self-Attention"><span class="nav-text">二、Self-Attention</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#2-1-%E7%90%86%E8%AE%BA%E9%83%A8%E5%88%86"><span class="nav-text">2.1 理论部分</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#2-2-%E4%BB%A3%E7%A0%81%E5%AE%9E%E7%8E%B0"><span class="nav-text">2.2 代码实现</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#2-3-%E5%A4%9A%E5%A4%B4%E6%B3%A8%E6%84%8F%E5%8A%9B%E6%9C%BA%E5%88%B6"><span class="nav-text">2.3 多头注意力机制</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E4%B8%89%E3%80%81Positional-Encoding"><span class="nav-text">三、Positional Encoding</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#3-1-%E7%90%86%E8%AE%BA%E9%83%A8%E5%88%86"><span class="nav-text">3.1 理论部分</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#3-2-%E4%BB%A3%E7%A0%81%E5%AE%9E%E7%8E%B0"><span class="nav-text">3.2 代码实现</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%9B%9B%E3%80%81Residuals-LN-FFN"><span class="nav-text">四、Residuals + LN + FFN</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#4-1-%E6%AE%8B%E5%B7%AE%E8%BF%9E%E6%8E%A5"><span class="nav-text">4.1 残差连接</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#4-2-%E5%B1%82%E5%BD%92%E4%B8%80%E5%8C%96"><span class="nav-text">4.2 层归一化</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#4-3-%E4%BB%A3%E7%A0%81%E5%AE%9E%E7%8E%B0"><span class="nav-text">4.3 代码实现</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E4%BA%94%E3%80%81Decoder"><span class="nav-text">五、Decoder</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#5-1-%E7%90%86%E8%AE%BA%E9%83%A8%E5%88%86"><span class="nav-text">5.1 理论部分</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#5-2-%E4%BB%A3%E7%A0%81%E5%AE%9E%E7%8E%B0"><span class="nav-text">5.2 代码实现</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%85%AD%E3%80%81The-Final-Linear-and-Softmax-Layer"><span class="nav-text">六、The Final Linear and Softmax Layer</span></a></li></ol></div>
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+    <img class="site-author-image" itemprop="image" alt="Okii"
+      src="/images/avatar.jpg">
+  <p class="site-author-name" itemprop="name">Okii</p>
+  <div class="site-description" itemprop="description"></div>
+</div>
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/archives/">
+        
+          <span class="site-state-item-count">11</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+            <a href="/categories/">
+          
+        <span class="site-state-item-count">5</span>
+        <span class="site-state-item-name">分类</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+            <a href="/tags/">
+          
+        <span class="site-state-item-count">10</span>
+        <span class="site-state-item-name">标签</span></a>
+      </div>
+  </nav>
+</div>
+  <div class="links-of-author motion-element">
+      <span class="links-of-author-item">
+        <a href="https://github.com/LimOkii" title="GitHub → https:&#x2F;&#x2F;github.com&#x2F;LimOkii" rel="noopener" target="_blank"><i class="fa fa-fw fa-github"></i>GitHub</a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="mailto:lyfei1126@gmail.com" title="E-Mail → mailto:lyfei1126@gmail.com" rel="noopener" target="_blank"><i class="fa fa-fw fa-envelope"></i>E-Mail</a>
+      </span>
+  </div>
+
+
+
+      </div>
+
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        
+
+        
+
+<div class="copyright">
+  
+  &copy; 
+  <span itemprop="copyrightYear">2024</span>
+  <span class="with-love">
+    <i class="fa fa-user"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">Okii</span>
+</div>
+  <div class="powered-by">由 <a href="https://hexo.io/" class="theme-link" rel="noopener" target="_blank">Hexo</a> & <a href="https://pisces.theme-next.org/" class="theme-link" rel="noopener" target="_blank">NexT.Pisces</a> 强力驱动
+  </div>
+
+        
+
+
+
+
+
+
+
+
+      </div>
+    </footer>
+  </div>
+
+  
+  <script src="/lib/anime.min.js"></script>
+  <script src="/lib/velocity/velocity.min.js"></script>
+  <script src="/lib/velocity/velocity.ui.min.js"></script>
+
+<script src="/js/utils.js"></script>
+
+<script src="/js/motion.js"></script>
+
+
+<script src="/js/schemes/pisces.js"></script>
+
+
+<script src="/js/next-boot.js"></script>
+
+
+
+
+  
+
+
+
+
+  
+<script src="/js/local-search.js"></script>
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+
+</body>
+</html>

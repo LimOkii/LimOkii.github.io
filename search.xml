@@ -279,63 +279,6 @@
       </tags>
   </entry>
   <entry>
-    <title>Parameter Efficient Fine-Tuning(PEFT)系列论文总结(三)</title>
-    <url>/2023/12/29/Parameter%20Efficient%20Fine-Tuning(PEFT)%E7%B3%BB%E5%88%97%E8%AE%BA%E6%96%87%E6%80%BB%E7%BB%93(%E4%B8%89)/</url>
-    <content><![CDATA[<p>承接上篇Parameter Efficient Fine-Tuning(PEFT)系列论文总结(二)，本篇主要介绍LoRA及其各种变体的微调方法。</p>
-<span id="more"></span>
-
-<h2 id="一、LoRA"><a href="#一、LoRA" class="headerlink" title="一、LoRA"></a>一、LoRA</h2><p>研究表明，语言模型针对特定任务微调之后，权重矩阵通常具有很低的本征秩 <code>（Intrinsic Rank）</code>。研究人员认为参数更新量即便投影到较小的子空间中，也不会影响学习的有效性。因此，提出固定预训练模型参数不变，在原本权重矩阵旁路添加低秩矩阵的乘积作为可训练参数，用以模拟参数的变化量。具体来说，假设预训练权重为${w_0\ \epsilon \ \mathbb{R}^{d<em>k}}$，可训练参数为${\varDelta W\ &#x3D;\ BA}$，其中${B\ \epsilon \ \mathbb{R}^{d</em>r} }$，${A\ \epsilon \ \mathbb{R}^{r*d}}$，初始化时，矩阵 ${A}$ 通过高斯函数初始化，矩阵${B}$ 为零初始化，使得训练开始之前旁路对原模型不造成影响，即参数改变量为 0。对于该权重的输入 ${x}$ 来说，输出为式${h\ &#x3D;\ W_0x+∆W\ x\ &#x3D;W_0x+BAx}$，<code>LoRA</code>算法结构方法如图：</p>
-<img src="/2023/12/29/Parameter%20Efficient%20Fine-Tuning(PEFT)%E7%B3%BB%E5%88%97%E8%AE%BA%E6%96%87%E6%80%BB%E7%BB%93(%E4%B8%89)/image-20240110192331072.png" alt="image-20240110192331072" style="zoom:80%;">
-
-<p>简言之，<code>LoRA</code>的核心思想是用一种低秩的方式来调整这些参数矩阵。在数学上，低秩意味着一个矩阵可以用两个较小的矩阵相乘来近似。</p>
-<p><strong>LoRA实现步骤如下：</strong></p>
-<p>1、选择目标层</p>
-<p>首先，在预训练神经网络模型中选择要应用<code>LoRA</code>的目标层。这些层通常是与特定任务相关的，如自注意力机制中的查询<code>Q</code>和键<code>K</code>矩阵</p>
-<p>值得注意的是，原则上，可以将<code>LoRA</code>应用于神经网络中权矩阵的任何子集，以减少可训练参数的数量。在<code>Transformer</code>体系结构中，<code>Self-Attetion</code>模块(<code>Wq</code>、<code>Wk</code>、<code>Wv</code>、<code>Wo</code>)中有四个权重矩阵，<code>MLP</code>模块中有两个权重矩阵。我们将<code>Wq</code>(或<code>Wk</code>，<code>Wv</code>)作为维度的单个矩阵，尽管输出维度通常被切分为注意力头。<br><em>(In principle, we can apply LoRA to any subset of weight matrices in a neural network to reduce th enumber of trainable parameters. In the Transformer architecture, there are four weight matrices in the self-attention module (Wq, Wk, Wv, Wo) and two in the MLP module. We treat Wq (or Wk, Wv)as a single matrix of dimension , even though the output dimension is usually sliced into attention heads)</em></p>
-<p>不过，为了简单和参数效率，将研究限制为仅适应下游任务的注意力权重，并冻结<code>MLP</code>模块(因此它们不接受下游任务的训练)</p>
-<p>(We limit our study to only adapting the attention weights for downstream tasks and freeze the MLP modules (so they are not trained in downstream tasks) both for simplicity and parameter-efficiency)<br>2、初始化映射矩阵和逆映射矩阵</p>
-<p>为目标层创建两个较小的矩阵<code>A</code>和<code>B</code>，然后进行变换</p>
-<p><code>A</code>是映射矩阵(一般用随机高斯分布初始化，维度上是降维）</p>
-<p><code>B</code>是逆映射矩阵(用0矩阵初始化)，维度上是升维</p>
-<p>之后做参数变换：将目标层的原始参数矩阵W通过映射矩阵<code>A</code>和逆映射矩阵<code>B</code>进行变换，计算公式为：<code>W&#39; = W + A * B</code>，这里<code>W&#39;</code>是变换后的参数矩阵</p>
-<p>3、微调模型</p>
-<p>使用新的参数矩阵<code>W&#39;</code>替换目标层的原始参数矩阵<code>W</code>，然后在特定任务的训练数据上对模型进行微调</p>
-<p>4、梯度更新</p>
-<p>在微调过程中，计算损失函数关于映射矩阵<code>A</code>和逆映射矩阵<code>B</code>的梯度，并使用优化算法(如<code>Adam</code>、<code>SGD</code>等)对<code>A</code>和<code>B</code>进行更新<br>注意，在更新过程中，原始参数矩阵<code>W</code>保持不变</p>
-<p>说白了，<strong>训练的时候固定原始PLM的参数，只训练降维矩阵A与升维矩阵B</strong></p>
-<p>且当需要切换到另一个下游任务时，可以通过减去<code>BA</code>然后添加不同的<code>B&#39;A&#39;</code>来恢复<code>W</code>，这是一个内存开销很小的快速操作*(When we need to switch to another downstream task, we can recover W0 by subtracting BA and then adding a different B0A0, a quick operation with very little memory overhead )*</p>
-<h2 id="二、AdaLoRA"><a href="#二、AdaLoRA" class="headerlink" title="二、AdaLoRA"></a>二、AdaLoRA</h2><p>从上文介绍的<code>LoRA</code>可以看出它的局限性：在一个模型的所有使用适配器的模块都使用了同一个<code>r</code>，但是无论是不同深度的参数，还是同一个深度不同模块的参数，它们在模型中的重要性都是不同的。例如下图的这两个例子，作者通过只对特定的模块进行微调，得出了不同参数的重要性的可视化结果。从中我们可以看出，自注意机制的全连接层要比计算 <code>Wq</code>，<code>Wk</code> ，<code>Wv</code>的权值重要，而更深层的参数要比更浅层的参数重要。</p>
-<img src="/2023/12/29/Parameter%20Efficient%20Fine-Tuning(PEFT)%E7%B3%BB%E5%88%97%E8%AE%BA%E6%96%87%E6%80%BB%E7%BB%93(%E4%B8%89)/image-20240110202455667.png" alt="image-20240110202455667" style="zoom:80%;">
-
-<p><strong>AdaLoRA的动机</strong></p>
-<p>因为在一个模型中，不同模块拥有着不同的贡献，那么在使用<code>LoRA</code>时如果我们能够根据它们重要性的不同为不同的模块分配不同的秩，那么将会带来很多好处。首先，我们为重要性更低的模块分配更小的秩，那么将有效的减少模型的计算量。其次，如果我们能够为更重要的特征分配更大的秩，那么将能够更有效的捕捉特征的细节信息。</p>
-<p>具体的过程数学要求有点高，先不看了</p>
-<p> <strong>总结</strong></p>
-<p><code>AdaLoRA</code>通过将所有添加了适配器的模块的秩的值看做了一组超参，然后通过模型剪枝的思想对<code>LoRA</code>的秩进行了自适应的计算。同时为了剪枝后模型效果的稳定，<code>AdaLoRA</code>使用<code>SVD</code>的三元组替代了<code>LoRA</code>的二元组，充分利用了<code>SVD</code>奇异矩阵的正交性和奇异向量的绝对值和特征重要性的相关性设计剪枝策略。</p>
-<h2 id="三、QLoRA"><a href="#三、QLoRA" class="headerlink" title="三、QLoRA"></a>三、QLoRA</h2><p>讲<code>QLoRA</code>之前，首先得明白什么是<strong>模型量化</strong></p>
-<p><strong>模型量化</strong>（Quantization）也被叫做模型的低精度表示，指的是在不大幅降低模型效果的前提下使用更低的精度来表示模型中的参数，从而缩减模型的体积和训练模型时占用的显存。量化的本质是函数映射，根据量化过程是否线性我们可以把量化分为<strong>线性量化</strong>和<strong>非线性量化</strong>。</p>
-<p>模型量化的核心工作就是在尽量保证模型准确率的前提下优化模型的推理速度和模型体积。</p>
-<p>与量化对应的是反量化（<code>Dequantization</code>），反量化指的是将模型的低精度恢复为高精度的过程，主要用于减少量化造成的精度损失</p>
-<p>简单来讲，模型量化是将浮点数值转化为定点数值，同时尽可能减少计算精度损失的方法。<br>模型量化是一种压缩网络参数的方式，它将神经网络的参数(<code>weight</code>)、激活值(<code>activation</code>)等原本用浮点表示的量值换用定点(整型)表示，在计算过程中，再将定点数据反量化回浮点数据，得到结果。</p>
-<p>我们可以对模型参数(<code>weight</code>)、激活值(<code>activation</code>)或者梯度(<code>gradient</code>)做量化。通常而言，模型的参数分布较为稳定，因此对参数 <code>weight</code> 做量化较为容易(比如，<code>QLoRA</code>便是对<code>weight</code>做量化)<br>至于模型的激活值往往存在异常值，直接对其做量化，会降低有效的量化格点数，导致精度损失严重，因此，激活值的量化需要更复杂的处理方法(如<code>SmoothQuant</code>)</p>
-<img src="/2023/12/29/Parameter%20Efficient%20Fine-Tuning(PEFT)%E7%B3%BB%E5%88%97%E8%AE%BA%E6%96%87%E6%80%BB%E7%BB%93(%E4%B8%89)/image-20240112135538529.png" alt="image-20240112135538529" style="zoom:80%;">
-
-
-
-<p><strong>QLoRA的工作有三个</strong></p>
-<p>1、结合了分位数量化和分块量化的<strong>4位标准浮点数量化</strong>（4-bit NormalFloat Quantization）</p>
-<p>2、对模型进行两次量化的<strong>双重量化</strong>（Double Quantization），它的第二次量化只作用在第一次量化产生的量化常数上，可以进一步节约显存占用</p>
-<p>3、<strong>分页优化</strong>（Paged Optimizer），使用<code>CPU</code>内存代替<code>GPU</code>显存保存部分梯度参数</p>
-<p>留到之后理解更深了再更新</p>
-]]></content>
-      <categories>
-        <category>论文</category>
-      </categories>
-      <tags>
-        <tag>PEFT</tag>
-      </tags>
-  </entry>
-  <entry>
     <title>Parameter Efficient Fine-Tuning(PEFT)系列论文总结(一)</title>
     <url>/2023/12/24/Parameter%20Efficient%20Fine-Tuning(PEFT)%E7%B3%BB%E5%88%97%E8%AE%BA%E6%96%87%E6%80%BB%E7%BB%93/</url>
     <content><![CDATA[<p>本篇主要介绍早期的<code>PEFT</code>方法，包括<code>Adapter</code>适配器方法、<code>PET</code>、<code>Prefix Tuning</code>以及<code>Prompt Tuning</code>。</p>
@@ -413,22 +356,447 @@
       </tags>
   </entry>
   <entry>
-    <title>Hello World</title>
-    <url>/2023/11/17/hello-world/</url>
-    <content><![CDATA[<p>Welcome to <a href="https://hexo.io/">Hexo</a>! This is your very first post. Check <a href="https://hexo.io/docs/">documentation</a> for more info. If you get any problems when using Hexo, you can find the answer in <a href="https://hexo.io/docs/troubleshooting.html">troubleshooting</a> or you can ask me on <a href="https://github.com/hexojs/hexo/issues">GitHub</a>.</p>
-<h2 id="Quick-Start"><a href="#Quick-Start" class="headerlink" title="Quick Start"></a>Quick Start</h2><h3 id="Create-a-new-post"><a href="#Create-a-new-post" class="headerlink" title="Create a new post"></a>Create a new post</h3><figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">$ hexo new <span class="string">&quot;My New Post&quot;</span></span><br></pre></td></tr></table></figure>
+    <title>Parameter Efficient Fine-Tuning(PEFT)系列论文总结(二)</title>
+    <url>/2023/12/27/Parameter%20Efficient%20Fine-Tuning(PEFT)%E7%B3%BB%E5%88%97%E8%AE%BA%E6%96%87%E6%80%BB%E7%BB%93(%E4%BA%8C)/</url>
+    <content><![CDATA[<p>承接上篇Parameter Efficient Fine-Tuning(PEFT)系列论文总结(一)，本篇主要介绍P-Tuning系列的微调方法。</p>
+<span id="more"></span>
 
-<p>More info: <a href="https://hexo.io/docs/writing.html">Writing</a></p>
-<h3 id="Run-server"><a href="#Run-server" class="headerlink" title="Run server"></a>Run server</h3><figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">$ hexo server</span><br></pre></td></tr></table></figure>
+<h2 id="一、P-Tuning-v1"><a href="#一、P-Tuning-v1" class="headerlink" title="一、P-Tuning v1"></a>一、P-Tuning v1</h2><p>清华大学的研究者于2021年3月通过此篇论文《<a href="https://arxiv.org/pdf/2103.10385">GPT Understands, Too</a>》提出<code>P-Tuning</code></p>
+<p>文章的提出为了解决这样一个问题，如下图给出：</p>
+<p>大模型的<code>Prompt</code>构造方式严重影响下游任务的效果。比如：<code>GPT-3</code>采用人工构造的模版来做上下文学习<code>(in-context learning)</code>，但人工设计的模版的变化特别敏感，加一个词或者少一个词，或者变动位置都会造成比较大的变化。</p>
+<img src="/2023/12/27/Parameter%20Efficient%20Fine-Tuning(PEFT)%E7%B3%BB%E5%88%97%E8%AE%BA%E6%96%87%E6%80%BB%E7%BB%93(%E4%BA%8C)/image-20240106145327787.png" alt="image-20240106145327787" style="zoom: 67%;">
 
-<p>More info: <a href="https://hexo.io/docs/server.html">Server</a></p>
-<h3 id="Generate-static-files"><a href="#Generate-static-files" class="headerlink" title="Generate static files"></a>Generate static files</h3><figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">$ hexo generate</span><br></pre></td></tr></table></figure>
+<p>之前的工作都是这种离散化的<code>token</code>，搜索出来的结果可能并不是最优的，导致性能不稳定。</p>
+<p>![image-20240106153147765](Parameter Efficient Fine-Tuning(PEFT)系列论文总结(二)&#x2F;image-20240106153147765.png)</p>
+<p>基于此，作者提出了<code>P-Tuning</code>，设计了一种连续可微的<code>virtual token</code>（类似<code>Prefix-Tuning</code>）。<code>P-Tuning</code>成功地实现了模版的自动构建，且借助<code>P-tuning</code>，<code>GPT</code>在<code>SuperGLUE</code>上的成绩首次超过了同等级别的<code>BERT</code>模型，这颠覆了在那年之前“<code>GPT</code>不擅长<code>NLU</code>”的结论，也是该论文命名的缘由</p>
+<img src="/2023/12/27/Parameter%20Efficient%20Fine-Tuning(PEFT)%E7%B3%BB%E5%88%97%E8%AE%BA%E6%96%87%E6%80%BB%E7%BB%93(%E4%BA%8C)/image-20240106150023656.png" alt="image-20240106150023656" style="zoom:80%;">
 
-<p>More info: <a href="https://hexo.io/docs/generating.html">Generating</a></p>
-<h3 id="Deploy-to-remote-sites"><a href="#Deploy-to-remote-sites" class="headerlink" title="Deploy to remote sites"></a>Deploy to remote sites</h3><figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">$ hexo deploy</span><br></pre></td></tr></table></figure>
+<p><strong>对于上面可微的理解：</strong></p>
+<p>原文是<code>continuous</code>连续，这里可微就是可导，应该是反向传播的时候要求导数，所以可以BP优化学习&#x3D;可微。</p>
+<p><strong>P-tuning和Prefix Tuning类似</strong>，也放弃了“模版由自然语言构成”这一常规要求，从而将模版的构建转化为连续参数优化问题</p>
+<p>下图是一个<code>prompt search</code>针对<code>The capital of Britain is [MASK]</code>(英国的首都是哪个城市)的例子<br>即给定上下文(蓝色区域，“英国”)和目标(红色区域，“[MASK]”)，橙色区域指的是提示符号<code>prompt tokens</code></p>
+<img src="/2023/12/27/Parameter%20Efficient%20Fine-Tuning(PEFT)%E7%B3%BB%E5%88%97%E8%AE%BA%E6%96%87%E6%80%BB%E7%BB%93(%E4%BA%8C)/image-20240107104210128.png" alt="image-20240107104210128" style="zoom:80%;">
 
-<p>More info: <a href="https://hexo.io/docs/one-command-deployment.html">Deployment</a></p>
+<ul>
+<li><p>在(a)中，提示生成器只收到离散的奖励<br><em>In (a), the prompt generator only receives discrete rewards</em></p>
+</li>
+<li><p>在(b)中，伪<code>prompt</code>和<code>prompt encoder</code>可以以可微的方式进行优化，有时，在(b)中添加少量与任务相关的<code>anchor tokens</code>(如<code>capital</code>)将带来进一步的改进<br><em>in (b) the pseudo prompts and prompt encoder can be optimized in a differentiable way. Sometimes, adding few task-related anchor tokens(such as “capital” in (b)) will bring further improvement</em></p>
+<p>(<code>ps</code>：经过预训练的LM的词嵌入已经变得高度离散，如果随机初始化<code>virtual token</code>，容易优化到局部最优值，而这些<code>virtual token</code>理论是应该有关联的。因此，作者通过实验发现用一个<code>prompt encoder</code>来编码会收敛更快，效果更好。即用一个<code>LSTM+MLP</code>去编码这些<code>virtual token</code>以后，再输入到模型)</p>
+</li>
+</ul>
+<p>换言之，<code>P-tuning</code>做法是用一些伪<code>prompt</code>代替这些显式的<code>prompt</code>(说白了，将自然语言提示的<code>token</code>，替换为可训练的嵌入)<br>具体的做法是可以用预训练词表中的<code>unused token</code>作为伪<code>prompt</code>「<code>BERT</code>的<code>vocab</code>里有<code>unused 1 ~ unused99</code>，就是为了方便增加词汇的」，然后通过训练去更新这些<code>token</code>的参数<br>也就是，<code>P-tuning</code>的<code> Prompt</code>不是显式的，不是我们可以看得懂的字符，而是一些隐式的、经过训练的、模型认为最好的<code>prompt token</code></p>
+<p><strong>Prefix Tuning和P-Tuning v1的区别：</strong></p>
+<p>1、<code>prefix tuning</code>在所有<code>transformer layer</code>都加入了<code>prompt</code>，而<code>P-Tuning</code>只在输入层加</p>
+<p>2、<code>P-Tuning</code>的<code>virtual token</code>的位置也不一定是前缀，插入的位置是可选的</p>
+<p>3、作者是用一个<code>prompt encoder</code>来编码收敛更快，效果更好。也就是说，用一个<code>LSTM+MLP</code>去编码这些<code>virtual token</code>以后，再输入到模型</p>
+<p>苏剑林说：“在P-Tuning中，如果我们不将新插入的token视为“模版”，是将它视为模型的一部分，那么实际上P-Tuning也是一种类似Adapter的做法，同样是固定原模型的权重，然后插入一些新的可优化参数，同样是只优化这些新参数，只不过这时候新参数插入的是Embedding层，因此，从这个角度看，P-Tuning与Adapter有颇多异曲同工之处”</p>
+<h2 id="二、P-Tuning-v2"><a href="#二、P-Tuning-v2" class="headerlink" title="二、P-Tuning v2"></a>二、P-Tuning v2</h2><p>之前的<code>Prompt Tuning</code>和<code>P-Tuning</code>等方法存在两个主要的问题：</p>
+<p>第一，缺乏模型参数规模和任务通用性。</p>
+<ul>
+<li>缺乏规模通用性：<code>Prompt Tuning</code>论文中表明当模型规模超过100亿个参数时，提示优化可以与全量微调相媲美。但是对于那些较小的模型（从100M到1B），提示优化和全量微调的表现有很大差异，这大大限制了提示优化的适用性。</li>
+<li>缺乏任务普遍性：尽管<code>Prompt Tuning</code>和<code>P-tuning</code>在一些 <code>NLU </code>基准测试中表现出优势，但提示调优对硬序列标记任务（即序列标注）的有效性尚未得到验证。</li>
+</ul>
+<p>第二，缺少深度提示优化，在<code>Prompt Tuning</code>和<code>P-tuning</code>中，连续提示只被插入<code>transformer</code>第一层的输入<code>embedding</code>序列中，在接下来的<code>transformer</code>层中，插入连续提示的位置的<code>embedding</code>是由之前的<code>transformer</code>层计算出来的，这可能导致两个可能的优化挑战：</p>
+<ul>
+<li>由于序列长度的限制，可调参数的数量是有限的</li>
+<li>输入<code>embedding</code>对模型预测只有相对间接的影响</li>
+</ul>
+<p>考虑到这些问题，作者提出了<code>P-Tuning v2</code>，它利用深度提示优化（如：<code>Prefix Tuning</code>），对<code>Prompt Tuning</code>和<code>P-Tuning</code>进行改进，作为一个跨规模和<code>NLU</code>任务的通用解决方案</p>
+<p><code>P-Tuning v2</code>（论文： <strong>P-Tuning v2: Prompt Tuning Can Be Comparable to Fine-tuning Universally Across Scales and Tasks</strong>），该方法在<strong>每一层</strong>都加入了<code>Prompts tokens</code>作为输入，而不是仅仅加在输入层，这带来两个方面的好处：</p>
+<ul>
+<li>更多可学习的参数（从<code>P-Tuning</code>和<code>Prompt Tuning</code>的0.01%增加到0.1%-3%），同时也足够参数高效。</li>
+<li>加入到更深层结构中的<code>Promp</code>能给模型预测带来更直接的影响</li>
+</ul>
+<img src="/2023/12/27/Parameter%20Efficient%20Fine-Tuning(PEFT)%E7%B3%BB%E5%88%97%E8%AE%BA%E6%96%87%E6%80%BB%E7%BB%93(%E4%BA%8C)/image-20240107135447839.png" alt="image-20240107135447839" style="zoom:80%;">
+
+<p>具体做法基本同<code>Prefix Tuning</code>，可以看作是将<strong>文本生成</strong>的<code>Prefix Tuning</code>技术适配到<code>NLU</code>任务中，然后做了一些改进：</p>
+<ul>
+<li><strong>移除重参数化的编码器</strong>。以前的方法利用重参数化功能来提高训练速度和鲁棒性（如：<code>Prefix Tuning</code>中的<code>MLP</code>、<code>P-Tuning</code>中的<code>LSTM</code>））。在 <code>P-Tuning v2</code> 中，作者发现重参数化的改进很小，尤其是对于较小的模型，同时还会影响模型的表现。</li>
+<li><strong>针对不同任务采用不同的提示长度</strong>。提示长度在提示优化方法的超参数搜索中起着核心作用。在实验中，我们发现不同的理解任务通常用不同的提示长度来实现其最佳性能，这与<code>Prefix-Tuning</code>中的发现一致，不同的文本生成任务可能有不同的最佳提示长度。</li>
+<li><strong>引入多任务学习</strong>。先在多任务的<code>Prompt</code>上进行预训练，然后再适配下游任务。多任务学习对我们的方法来说是可选的，但可能是相当有帮助的。一方面，连续提示的随机惯性给优化带来了困难，这可以通过更多的训练数据或与任务相关的无监督预训练来缓解；另一方面，连续提示是跨任务和数据集的特定任务知识的完美载体。我们的实验表明，在一些困难的序列任务中，多任务学习可以作为<code>P-Tuning v2</code>的有益补充。</li>
+<li><strong>回归传统的分类标签范式，而不是映射器</strong>。标签词映射器（Label Word Verbalizer）一直是提示优化的核心组成部分，它将<code>one-hot</code>类标签变成有意义的词，以利用预训练语言模型头。尽管它在<code>few-shot</code>设置中具有潜在的必要性，但在全数据监督设置中，<code>Verbalizer</code>并不是必须的。它阻碍了提示调优在我们需要无实际意义的标签和句子嵌入的场景中的应用。因此，<code>P-Tuning v2</code>回归传统的<code>CLS</code>标签分类范式，采用随机初始化的分类头（Classification Head）应用于<code>tokens</code>之上，以增强通用性，可以适配到序列标注任务。</li>
+</ul>
 ]]></content>
+      <categories>
+        <category>论文</category>
+      </categories>
+      <tags>
+        <tag>PEFT</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>Transformers 理解</title>
+    <url>/2023/06/27/Transformers/</url>
+    <content><![CDATA[<p>本章是Transformers精讲，并配备哈佛版的基于Pytorch的实现代码</p>
+<span id="more"></span>
+
+<h2 id="一、宏观角度"><a href="#一、宏观角度" class="headerlink" title="一、宏观角度"></a>一、宏观角度</h2><p>1、首先将该模型视为一个黑匣子。 在机器翻译应用程序中，它将采用一种语言的句子，并以另一种语言输出其翻译。</p>
+<p><img src="/2023/06/27/Transformers/image-20240113204413171.png" alt="image-20240113204413171"></p>
+<p>2、继续瓦解，可以看到一个编码组件、一个解码组件以及它们之间的连接。</p>
+<p><img src="/2023/06/27/Transformers/image-20240113204543371.png" alt="image-20240113204543371"></p>
+<p>3、编码组件是一堆<code>Encoder</code>（论文将其中六个编码器堆叠在一起 - 6 没有什么神奇之处，绝对可以尝试其他排列）。 解码组件是相同数量的<code>Decoder</code>的堆栈。</p>
+<p><img src="/2023/06/27/Transformers/image-20240113204719720.png" alt="image-20240113204719720"></p>
+<p>4、这些编码器在结构上都是相同的（但它们不共享权重）。 每一层又分为两个子层：</p>
+<p><img src="/2023/06/27/Transformers/image-20240113204801613.png" alt="image-20240113204801613"><code>Encoder</code>的输入首先流经<code>Self-Attention</code>，该层帮助编码器在对特定单词进行编码时查看输入句子中的其他单词。 <code>Self-Attention</code>将在后续小节详细介绍。</p>
+<p><code>Self-Attention</code>的输出被馈送到前馈神经网络。 完全相同的前馈网络独立应用于每个位置。</p>
+<p>5、<code>Decoder</code>具有这两个层，但它们之间是一个注意力层，帮助解码器关注输入句子的相关部分（类似于 <code>seq2seq</code> 模型中注意力的作用）。</p>
+<p><img src="/2023/06/27/Transformers/image-20240113205106009.png" alt="image-20240113205106009"></p>
+<p>6、有了宏观的感受，再来看一下原论文中的图</p>
+<img src="/2023/06/27/Transformers/image-20240113205906204.png" alt="image-20240113205906204" style="zoom:67%;">
+
+<p>拆解完再回过来看是不是更清晰，接下来我将逐一介绍其中的各个模块，并配有<code>Pytorch</code>代码实现</p>
+<h2 id="二、Self-Attention"><a href="#二、Self-Attention" class="headerlink" title="二、Self-Attention"></a>二、Self-Attention</h2><h3 id="2-1-理论部分"><a href="#2-1-理论部分" class="headerlink" title="2.1 理论部分"></a>2.1 理论部分</h3><p>其实按照模型流程应该先介绍输入部分</p>
+<p>输入部分包括：<strong>词向量嵌入 +  位置向量嵌入</strong>（对应维度直接相加）</p>
+<p>但是，先讲完<code>Self-Attention</code>，你就会明白为什么光有词向量嵌入还不够，还需要位置向量嵌入</p>
+<p><strong>正式开始Self-Attention</strong></p>
+<p><img src="/2023/06/27/Transformers/image-20240113211345136.png" alt="image-20240113211345136"></p>
+<p>假设我们已经得到了模型的输入，每个单词都嵌入到大小为 512 的向量中。我将用这些简单的框表示这些向量</p>
+<p>将单词嵌入到输入序列中后，每个单词都会流经<code>Encoder</code>的两个子层。</p>
+<p><img src="/2023/06/27/Transformers/image-20240113211618648.png" alt="image-20240113211618648"></p>
+<p>接下来，我将示例切换为较短的句子，去查看编码器的每个子层中发生的情况</p>
+<p>正如已经提到的，<code>Encoder</code>接收向量列表作为输入。 它通过将这些向量传递到<code>Self-Attention</code>层，然后传递到前馈神经网络，然后将输出向上发送到下一个<code>Encoder</code>来处理该列表。</p>
+<p><img src="/2023/06/27/Transformers/image-20240113211916839.png" alt="image-20240113211916839"></p>
+<p><code>Self-Attention</code>即自注意力机制，感动陌生很正常，因为当时正是在这篇论文中提出的</p>
+<p>下面我将介绍到底什么叫自注意力机制</p>
+<p>假设以下句子是要翻译的输入句子：</p>
+<p>”<code>The animal didn&#39;t cross the street because it was too tired</code>”</p>
+<p>这句话中的<code>it</code>指的是什么？ 指的是街道还是动物？ 这对人类来说是一个简单的问题，但对算法来说就不那么简单了。</p>
+<p>当模型处理<code>it</code>这个词时，自注意力使其能够将<code>it</code>与“动物”联系起来。</p>
+<p>当模型处理每个单词（输入序列中的每个位置）时，自注意力允许它查看输入序列中的其他位置以寻找有助于更好地编码该单词的线索。</p>
+<p>你肯定还是不明白它是怎么做的，接下来是细节部分</p>
+<p>我们首先看看如何使用向量计算自注意力，然后继续看看它是如何实际实现的——使用矩阵。</p>
+<p>计算自注意力的第一步是从每个编码器的输入向量（在本例中为每个单词的嵌入）创建三个向量。 因此，对于每个单词，我们创建一个查询向量、一个键向量和一个值向量。 这些向量是通过将<strong>嵌入</strong>乘以我们在训练过程中训练的<strong>三个矩阵</strong>来创建的。</p>
+<p><img src="/2023/06/27/Transformers/image-20240113212618490.png" alt="image-20240113212618490"></p>
+<p>将 <code>x1 </code>乘以 <code>Wq</code> 权重矩阵会产生 <code>q1</code>，即与该单词关联的“查询”向量。 我们最终为输入句子中的每个单词创建一个“查询”、一个“键”和一个“值”投影。</p>
+<p>这里注意一下维度, 在论文中的<code>Embedding</code>维度<code>d_model = 512</code>，给出的<code>Key</code>维度和<code>Value</code>维度均为64</p>
+<p>即<code>d_k = d_v = d_model / h = 64</code>，那么对应<code>QKV</code>的矩阵<code>Wq</code>、<code>Wk</code>、<code>Wv</code>大小都应该是（512，64）</p>
+<p>这样就能根据输入得到一个查询向量<code>q1</code>，一组键值对<code>&lt;k1,v1&gt;</code></p>
+<p>有了<code>QKV</code>, 接下来需要按照<code>Attention</code>的流程计算<code>q1</code>和<code>k1</code>的<code>Score</code></p>
+<p> 根据论文中提到的<strong>缩放点积注意力</strong>(Scaled Dot-Product Attention):</p>
+<img src="/2023/06/27/Transformers/image-20240113213524039.png" alt="image-20240113213524039" style="zoom: 80%;">
+
+<p>先进行点积, 再进行缩放, 计算完<code>q1</code>与句中所有单词的<code>k1,k2……kn</code>的得分(这里采用点积得到)后, 再对<code>Score</code>除以根号下<code>d_k</code>, 完成缩放, 最后再通过<code>Softmax</code>得到<code>Attention</code>权重, 加权求和结果称为<code>z1</code></p>
+<p><img src="/2023/06/27/Transformers/image-20240113213705835.png" alt="image-20240113213705835"></p>
+<p>上面的讨论全部都是针对一个单词的, 但是在实际的运算中, 由于<code>Encoder</code>是线性<code>Stack</code>起来的, 所以其实<code>Encoder</code>的训练是可以并行的, 即<strong>多个单词做完Embedding后作为一个矩阵并行计算</strong>, 假设输入矩阵<code>X</code>，通过<code>Wq</code>、<code>Wk</code>、<code>Wv</code>计算后可以得到<code>Q、K、V</code>：</p>
+<img src="/2023/06/27/Transformers/image-20240114201121264.png" alt="image-20240114201121264" style="zoom:50%;">
+
+<p>最后，由于我们处理的是矩阵，我们可以将上述步骤压缩为一个公式来计算自注意力层的输出：</p>
+<p>​                                                                                        $$ Attention\left( Q,K,V \right) \ &#x3D;\ Soft\max \left( \frac{QK^T}{\sqrt[]{d_k}} \right) V $$ </p>
+<img src="/2023/06/27/Transformers/image-20240114201259276.png" alt="image-20240114201259276" style="zoom: 67%;">
+
+
+
+<p><strong>这里除以根号下 d_k 的解释</strong>：</p>
+<p>当<code>d_k</code>非常大时, 求得的内积可能会非常大, 如果不进行缩放, 不同的内积大小可能差异会非常大, <code>Softmax</code>在指数运算可能将梯度推到特别小, 导致梯度消失</p>
+<p>当 <code>d_k</code>较大时，很有可能存在某个 <code>key</code>，其与<code>query</code>计算出来的对齐分数远大于其他的<code>key</code>与该 <code>query</code>算出的对齐分数。这时，<code>softmax</code> 函数对另外的<code>qk</code>偏导数都趋于 0.</p>
+<p>这样结果就是，<code>softmax</code>函数梯度过低（趋于零），使得模型误差反向传播经过<code>softmax</code> 函数后无法继续传播到模型前面部分的参数上，造成这些参数无法得到更新，最终影响模型的训练效率</p>
+<h3 id="2-2-代码实现"><a href="#2-2-代码实现" class="headerlink" title="2.2 代码实现"></a>2.2 代码实现</h3><p><strong>Pytorch代码实现如下</strong></p>
+<figure class="highlight python"><table><tr><td class="code"><pre><span class="line"><span class="keyword">def</span> <span class="title function_">attention</span>(<span class="params">query, key, value, mask=<span class="literal">None</span>, dropout=<span class="literal">None</span></span>):</span><br><span class="line">    d_k = query.size(-<span class="number">1</span>)</span><br><span class="line">    scores = torch.matmul(query, key.transpose(-<span class="number">2</span>, -<span class="number">1</span>))/math.sqrt(d_k)</span><br><span class="line">    <span class="keyword">if</span> mask <span class="keyword">is</span> <span class="keyword">not</span> <span class="literal">None</span>:</span><br><span class="line">        scores = scores.masked_fill(mask == <span class="number">0</span>, -<span class="number">1e9</span>)</span><br><span class="line">    p_attn = F.softmax(scores, dim=-<span class="number">1</span>)</span><br><span class="line">    <span class="keyword">if</span> dropout <span class="keyword">is</span> <span class="keyword">not</span> <span class="literal">None</span>:</span><br><span class="line">        p_attn = dropout(p_attn)</span><br><span class="line">    <span class="keyword">return</span> torch.matmul(p_attn, value), p_attn</span><br></pre></td></tr></table></figure>
+
+<ul>
+<li><p><code>query</code>，<code>key</code>，和 <code>value</code> 的维度是 <code>(batch_size, seq_len, d_model)</code>，其中 <code>seq_len</code> 是输入序列的长度，<code>d_model</code> 是模型的隐藏单元数</p>
+</li>
+<li><p>在线性映射的步骤中，<code>l(x).view(nbatches, -1, self.h, self.d_k).transpose(1, 2)</code> 使用了多头 (<code>self.h</code>) 和 <code>d_k</code>，它将 <code>query</code>，<code>key</code>，和 <code>value</code> 映射到了 <code>(batch_size, h, seq_len, d_k)</code> 的维度</p>
+</li>
+<li><p><code>torch.matmul(query, key.transpose(-2, -1))</code> 计算注意力分数，其中 <code>query</code> 和 <code>key</code> 经过了 <code>transpose</code> 操作以匹配维度，最终得到的分数维度是 <code>(batch_size, h, seq_len, seq_len)</code>，在最后两个维度的行上做了<code>softmax</code></p>
+</li>
+<li><p>在 <code>mask</code> 步骤中，如果有掩码，就使用 <code>scores.masked_fill(mask == 0, -1e9)</code> 将不应考虑的位置的分数设置为一个极小的值 <code>-1e9</code></p>
+</li>
+<li><p>通过 <code>F.softmax(scores, dim=-1)</code> 对分数进行<code>softmax</code> 操作，得到注意力权重 <code>p_attn</code>，其维度为 <code>(batch_size, h, seq_len, seq_len)</code></p>
+</li>
+<li><p><code>F.softmax(scores, dim=-1)</code>如果是一个二维的张量，<code>dim=0</code>表示在列上做<code>softmax</code>，<code>dim=1</code>表示在行上做<code>softmax</code></p>
+</li>
+<li><p>最后通过 <code>torch.matmul(p_attn, value)</code> 得到经过注意力权重调节后的值，其维度为 <code>(batch_size, h, seq_len, d_k)</code></p>
+<p><code>batch_size</code> 是每个 batch 的大小，<code>seq_len</code> 是序列的长度，<code>h</code> 是头数，<code>d_k</code> 是每个头的隐藏单元数。在多头注意力机制中，通过对头数进行拼接，最后的输出维度为 <code>(batch_size, seq_len, h * d_k)</code></p>
+<h3 id="2-3-多头注意力机制"><a href="#2-3-多头注意力机制" class="headerlink" title="2.3 多头注意力机制"></a>2.3 多头注意力机制</h3><p>多头的思路和<code>CNN</code>中的多个卷积核起到的作用明显是一致的. 所谓”多头”, 放在卷积神经网络里就是卷积层多个卷积核的特征提取过程, 在这里就是进行多次注意力的提取, 就像多个卷积核一样, 多次<strong>不同的初始化矩阵</strong>经过训练可能会有多种<strong>不同的特征,</strong> 每个头用于将输入嵌入投影到不同的表示子空间中，更有利于<strong>不同角度</strong>的特征抽取和信息提取。</p>
+<p><img src="/2023/06/27/Transformers/image-20240116133617842.png" alt="image-20240116133617842"></p>
+<p>通过多头注意力，为每个头维护单独的 <code>Q/K/V</code> 权重矩阵，从而产生不同的 <code>Q/K/V</code> 矩阵。 正如我们之前所做的那样，我们将 <code>X</code> 乘以 <code>WQ/WK/WV</code> 矩阵以生成 <code>Q/K/V</code> 矩阵。</p>
+<p><img src="/2023/06/27/Transformers/image-20240116133811713.png" alt="image-20240116133811713"></p>
+<p>如果进行与上面概述相同的自注意力计算，只是使用不同的权重矩阵进行八次不同的计算，我们最终会得到八个不同的 <code>Z </code>矩阵</p>
+<p>但是接下来的前馈层不需要八个矩阵——它需要一个矩阵（每个单词一个向量）</p>
+<p> 所以我们需要一种方法将这八个压缩成一个矩阵</p>
+<p>该怎么做呢？ 将矩阵连接起来，然后将它们乘以一个附加的权重矩阵 <code>Wo</code></p>
+<p><img src="/2023/06/27/Transformers/image-20240116134104328.png" alt="image-20240116134104328">这几乎就是多头自注意力的全部内容。 这是相当多的矩阵。 </p>
+<p>用下图进行汇总</p>
+<p><img src="/2023/06/27/Transformers/image-20240116134218698.png" alt="image-20240116134218698"></p>
+<p><strong>Pytorch代码实现如下</strong></p>
+<figure class="highlight python"><table><tr><td class="code"><pre><span class="line"><span class="keyword">class</span> <span class="title class_">MultiHeadedAttention</span>(nn.Module):</span><br><span class="line">    <span class="keyword">def</span> <span class="title function_">__init__</span>(<span class="params">self, h, d_model, dropout=<span class="number">0.1</span></span>):</span><br><span class="line">        <span class="built_in">super</span>(MultiHeadedAttention, self).__init__()</span><br><span class="line">        <span class="comment"># 判断d - model % h是否有余数，如果有就报错</span></span><br><span class="line">        <span class="keyword">assert</span> d_model % h == <span class="number">0</span></span><br><span class="line">        <span class="comment"># d-model一般为512（序列符号的embedding长度），h是头数一般为8</span></span><br><span class="line">        self.h = h</span><br><span class="line">        <span class="comment"># 两者相除得到d_k的长度，即query、key矩阵中的列数</span></span><br><span class="line">        self.d_k = d_model // h</span><br><span class="line">        <span class="comment"># 这里定义的4个线性层, 相当于Wq、Wk、Wv、Wo四个投影矩阵</span></span><br><span class="line">        self.linears = clones(nn.Linear(d_model, d_model), <span class="number">4</span>)</span><br><span class="line">        self.attn = <span class="literal">None</span></span><br><span class="line">        self.dropout = nn.Dropout(p=dropout)</span><br><span class="line"></span><br><span class="line">    <span class="keyword">def</span> <span class="title function_">forward</span>(<span class="params">self, query, key, value, mask=<span class="literal">None</span></span>):</span><br><span class="line">        <span class="keyword">if</span> mask <span class="keyword">is</span> <span class="keyword">not</span> <span class="literal">None</span>:</span><br><span class="line">            <span class="comment"># Same mask applied to all h heads.</span></span><br><span class="line">            mask = mask.unsqueeze(<span class="number">1</span>)</span><br><span class="line">        nbatches = query.size(<span class="number">0</span>)</span><br><span class="line"></span><br><span class="line">        <span class="comment"># 1) Do all the linear projections in batch from d_model =&gt; h x d_k</span></span><br><span class="line">        <span class="comment"># zip中的(query, key, value)相当于原始的输入, 即 词嵌入 + 位置嵌入</span></span><br><span class="line">        <span class="comment"># l(x) 相当于原始嵌入输入过了Wq、Wk、Wv三个映射矩阵得到query, key, value</span></span><br><span class="line">        <span class="comment"># 然后再reshape到 nbatches * head * seq_len * d_k(64)</span></span><br><span class="line">        query, key, value = [l(x).view(nbatches, -<span class="number">1</span>, self.h, self.d_k).transpose(<span class="number">1</span>, <span class="number">2</span>) <span class="keyword">for</span> l, x <span class="keyword">in</span> <span class="built_in">zip</span>(self.linears, (query, key, value))]</span><br><span class="line">        <span class="comment"># 2) Apply attention on all the projected vectors in batch.</span></span><br><span class="line">        x, self.attn = attention(query, key, value, mask=mask, dropout=self.dropout)</span><br><span class="line"></span><br><span class="line">        <span class="comment"># 3) &quot;Concat&quot; using a view and apply a final linear.</span></span><br><span class="line">        x = x.transpose(<span class="number">1</span>, <span class="number">2</span>).contiguous().view(nbatches, -<span class="number">1</span>, self.h * self.d_k)</span><br><span class="line">        <span class="keyword">return</span> self.linears[-<span class="number">1</span>](x)</span><br></pre></td></tr></table></figure></li>
+</ul>
+<h2 id="三、Positional-Encoding"><a href="#三、Positional-Encoding" class="headerlink" title="三、Positional Encoding"></a>三、Positional Encoding</h2><h3 id="3-1-理论部分"><a href="#3-1-理论部分" class="headerlink" title="3.1 理论部分"></a>3.1 理论部分</h3><p>正式因为<code>Transformer</code>采用了纯粹的<code>Attention</code>结构, 不像<code>RNN</code>一样能够通过时间步来反映句子中单词的前后关系, 即不能得知<strong>位置信息</strong>。要知道, 在<code>NLP</code>任务中, <strong>语序</strong>是一个相当重要的属性, 所以必须要通过某种方式让<code>Transformer</code>得知单词的位置, 作者通过<strong>位置编码</strong>在每次进入<code>Encoder</code>和<code>Decoder</code>前将位置信息写入。这样来看, 与其叫位置编码, 不如叫<strong>位置嵌入</strong>。</p>
+<p>位置编码可以直接与<code>Embedding</code>的向量相加:</p>
+<p><img src="/2023/06/27/Transformers/image-20240114162517162.png" alt="image-20240114162517162"></p>
+<p>那这个位置编码是怎么得到的呢？</p>
+<p>作者的做法非常有意思, 对不同的单词位置, 不同的<code>Embedding</code>维度, 它的编码都是<strong>唯一</strong>的, 应用正弦和余弦函数也方便<code>Transformer</code>学到位置的特征. 如果将当前单词位置记为<code>pos</code>, 而词向量的某个维度记为<code>i</code>, 那么位置编码的方法为:</p>
+<p><img src="/2023/06/27/Transformers/image-20240114162811559.png" alt="image-20240114162811559"></p>
+<p>如果我们假设嵌入的维数为<code>4</code>，则实际的位置编码将如下所示：</p>
+<p><img src="/2023/06/27/Transformers/image-20240114162837902.png" alt="image-20240114162837902"></p>
+<p>根据上述<code>PE</code>的位置编码公式，在这个式子中, 编码周期不受单词位置影响, 仅仅与模型开始设计的<code>d_model</code><br> 和<code>Embedding</code>的不同维度<code>i</code>相关</p>
+<p>对于不同的<code>i</code>，根据三角函数的周期公式<code>T = 2Π / w</code>，<code>i</code>的范围是[0，256]</p>
+<p>可以得到<code>PE</code>的的周期变化范围是<code>[2Π，10000 * 2Π ]</code></p>
+<p>这样看，同一位置上的词语, 对于不同的<code>Embedding</code>维度, 都得到不同的编码, 并且随着<code>i</code>的增大, 位置编码的值的变化就越来越慢. 这种编码对于不同维度的<code>Embedding</code>来说是<strong>唯一</strong>的, 因此模型能够学习到关于<code>Embedding</code>的位置信息。</p>
+<p>为什么会选择如上公式呢？作者表示：</p>
+<p><img src="/2023/06/27/Transformers/image-20240114195410034.png" alt="image-20240114195410034"></p>
+<p>已知三角函数公式如下：</p>
+<p><img src="/2023/06/27/Transformers/image-20240114195423850.png" alt="image-20240114195423850"></p>
+<p>偏移<code>k</code>后，得到的<code>PE</code>如下：</p>
+<p><img src="/2023/06/27/Transformers/image-20240114195522326.png" alt="image-20240114195522326"></p>
+<p>作者希望借助上述绝对位置的编码公式，让模型能够学习到相对位置信息</p>
+<h3 id="3-2-代码实现"><a href="#3-2-代码实现" class="headerlink" title="3.2 代码实现"></a>3.2 代码实现</h3><p><strong>Pytorch代码实现如下</strong></p>
+<figure class="highlight python"><table><tr><td class="code"><pre><span class="line"><span class="keyword">class</span> <span class="title class_">Embeddings</span>(nn.Module):</span><br><span class="line">    <span class="keyword">def</span> <span class="title function_">__init__</span>(<span class="params">self, d_model, vocab</span>):</span><br><span class="line">        <span class="built_in">super</span>(Embeddings, self).__init__()</span><br><span class="line">        self.lut = nn.Embedding(vocab, d_model)</span><br><span class="line">        self.d_model = d_model</span><br><span class="line"></span><br><span class="line">    <span class="keyword">def</span> <span class="title function_">forward</span>(<span class="params">self, x</span>):</span><br><span class="line">        <span class="keyword">return</span> self.lut(x) * math.sqrt(self.d_model)</span><br><span class="line"></span><br><span class="line"></span><br><span class="line"><span class="keyword">class</span> <span class="title class_">PositionalEncoding</span>(nn.Module):</span><br><span class="line">    <span class="keyword">def</span> <span class="title function_">__init__</span>(<span class="params">self, d_model, dropout, max_len=<span class="number">5000</span></span>):</span><br><span class="line">        <span class="built_in">super</span>(PositionalEncoding, self).__init__()</span><br><span class="line">        self.dropout = nn.Dropout(p=dropout)</span><br><span class="line">        <span class="comment"># pe (5000 * 512)</span></span><br><span class="line">        pe = torch.zeros(max_len, d_model)</span><br><span class="line">        <span class="comment"># position (5000 * 1)</span></span><br><span class="line">        position = torch.arange(<span class="number">0</span>, max_len).unsqueeze(<span class="number">1</span>)</span><br><span class="line">        <span class="comment"># div_term (256 * 1)</span></span><br><span class="line">        div_term = torch.exp(torch.arange(<span class="number">0</span>, d_model, <span class="number">2</span>) *</span><br><span class="line">                             -(math.log(<span class="number">10000.0</span>) / d_model))</span><br><span class="line">        <span class="comment"># 偶数列</span></span><br><span class="line">        pe[:, <span class="number">0</span>::<span class="number">2</span>] = torch.sin(position * div_term)</span><br><span class="line">        <span class="comment"># 奇数列</span></span><br><span class="line">        pe[:, <span class="number">1</span>::<span class="number">2</span>] = torch.cos(position * div_term)</span><br><span class="line">        <span class="comment"># [1, max_len, d_model]</span></span><br><span class="line">        <span class="comment"># pe (1 * 5000 * 512)</span></span><br><span class="line">        pe = pe.unsqueeze(<span class="number">0</span>)</span><br><span class="line">        self.register_buffer(<span class="string">&#x27;pe&#x27;</span>, pe)</span><br><span class="line"></span><br><span class="line">    <span class="keyword">def</span> <span class="title function_">forward</span>(<span class="params">self, x</span>):</span><br><span class="line">        <span class="comment"># 输入的最终编码 = word_embedding + positional_embedding</span></span><br><span class="line">        x = x + self.pe[:, :x.size(<span class="number">1</span>)].detach()</span><br><span class="line">        <span class="keyword">return</span> self.dropout(x)</span><br></pre></td></tr></table></figure>
+
+
+
+<h2 id="四、Residuals-LN-FFN"><a href="#四、Residuals-LN-FFN" class="headerlink" title="四、Residuals + LN + FFN"></a>四、Residuals + LN + FFN</h2><p>在继续之前，需要提及<code>Encoder</code>架构中的一个细节，即每个编码器中的每个子层（自注意力，<code>ffnn</code>）周围都有一个残差连接，并且后面是层归一化步骤。</p>
+<h3 id="4-1-残差连接"><a href="#4-1-残差连接" class="headerlink" title="4.1 残差连接"></a>4.1 残差连接</h3><p><img src="/2023/06/27/Transformers/image-20240116135601496.png" alt="image-20240116135601496"></p>
+<p>如果要可视化与自注意力相关的向量和层归一化操作，如下图：</p>
+<p><img src="/2023/06/27/Transformers/image-20240116135615871.png" alt="image-20240116135615871"></p>
+<p>这也适用于<code>Decoder</code>的子层。 如果我们考虑一个由 <code>2</code> 个堆叠编码器和解码器组成的 <code>Transformer</code>，它看起来会是这样的：</p>
+<p><img src="/2023/06/27/Transformers/image-20240116135752823.png" alt="image-20240116135752823"></p>
+<h3 id="4-2-层归一化"><a href="#4-2-层归一化" class="headerlink" title="4.2 层归一化"></a>4.2 层归一化</h3><p><code>Layer Norm</code>也是一种类似于<code>Batch Norm</code>的归一化方式, 同样能起到加快收敛的作用, 在<strong>NLP任务</strong>中比较常用</p>
+<p><code>Batch Norm</code>中, 记录下一个<code>Batch</code>中每维<code>Feature</code>的均值和方差, 并进行放缩和平移, 即对<strong>不同样本的同一个通道特征</strong>进行归一化</p>
+<p>在<code>Layer Norm</code>中, 只是换了一个维度, 我们对<strong>同一个样本的不同通道</strong>进行归一化</p>
+<p><img src="/2023/06/27/Transformers/layernorm.png" alt="img"></p>
+<p><strong>BN和LN的区别：</strong></p>
+<p><strong>主要区别在于 normalization的方向不同！</strong></p>
+<p><code>Batch</code>顾名思义是对一个<code>batch</code>进行操作。假设我们有 10行 3列 的数据，即我们的<code>batchsize = 10</code>，每一行数据有三个特征，假设这三个特征是**[身高、体重、年龄]<strong>。那么<code>BN</code>是针对每一列（特征）进行缩放，例如算出</strong>[身高]**的均值与方差，再对身高这一列的10个数据进行缩放。体重和年龄同理。这是一种“列缩放”。</p>
+<p>而<code>layer</code>方向相反，它针对的是每一行进行缩放。即只看一笔数据，算出这笔所有特征的均值与方差再缩放。这是一种“行缩放”。</p>
+<p>细心的你已经看出来，<code>layer normalization</code>对所有的特征进行缩放，这显得很没道理。我们算出一行这**[身高、体重、年龄]**三个特征的均值方差并对其进行缩放，事实上会因为特征的量纲不同而产生很大的影响。但是<code>BN</code>则没有这个影响，因为<code>BN</code>是对一列进行缩放，一列的量纲单位都是相同的。</p>
+<p>那么我们为什么还要使用<code>LN</code>呢？因为<code>NLP</code>领域中，<code>LN</code>更为合适。</p>
+<p>如果我们将一批文本组成一个<code>batch</code>，那么<code>BN</code>的操作方向是，对每句话的<strong>第一个</strong>词进行操作。但语言文本的复杂性是很高的，任何一个词都有可能放在初始位置，且词序可能并不影响我们对句子的理解。而<code>BN</code>是<strong>针对每个位置</strong>进行缩放，这<strong>不符合NLP的规律</strong>。</p>
+<p>而<code>LN</code>则是针对一句话进行缩放的，且<strong>LN一般用在第三维度</strong>，如<code>[batchsize, seq_len, dims]</code>中的<code>dims</code>，一般为词向量的维度，或者是<code>RNN</code>的输出维度等等，这一维度各个特征的量纲应该相同。因此也不会遇到上面因为特征的量纲不同而导致的缩放问题。</p>
+<p><img src="/2023/06/27/Transformers/image-20240116150026767.png" alt="image-20240116150026767"></p>
+<p><code>BN</code> 感觉是对样本内部特征的缩放，<code>LN </code>是样本直接之间所有特征的缩放。为啥<code>BN</code>不适合<code>NLP</code> 是因为NLP模型训练里的每次输入的句子都是多个句子，并且长度不一，那么 针对每一句的缩放才更加合理，才能表达每个句子之间代表不同的语义表示，这样让模型更加能捕捉句子之间的上下语义关系。如果要用<code>BN</code>，它首先要面临的长度不一的问题。有时候<code>batch size</code>越小的<code>bn</code>效果更不好</p>
+<h3 id="4-3-代码实现"><a href="#4-3-代码实现" class="headerlink" title="4.3 代码实现"></a>4.3 代码实现</h3><p><strong>Pytorch代码实现如下</strong></p>
+<figure class="highlight python"><table><tr><td class="code"><pre><span class="line"><span class="keyword">class</span> <span class="title class_">LayerNorm</span>(nn.Module):</span><br><span class="line">    <span class="keyword">def</span> <span class="title function_">__init__</span>(<span class="params">self, features, eps=<span class="number">1e-6</span></span>):</span><br><span class="line">        <span class="built_in">super</span>(LayerNorm, self).__init__()</span><br><span class="line">        <span class="comment"># 层归一化后, 引入这两个可学习参数</span></span><br><span class="line">        <span class="comment"># Layer Normalization 能够更灵活地适应不同的数据分布</span></span><br><span class="line">        <span class="comment"># 练过程中，这两个参数会通过反向传播进行更新，以最优化模型的性能</span></span><br><span class="line">        self.a_2 = nn.Parameter(torch.ones(features))</span><br><span class="line">        self.b_2 = nn.Parameter(torch.zeros(features))</span><br><span class="line">        self.eps = eps</span><br><span class="line"></span><br><span class="line">    <span class="keyword">def</span> <span class="title function_">forward</span>(<span class="params">self, x</span>):</span><br><span class="line">       <span class="comment"># mean, std的计算在最后一个维度（emb_dim）上进行的</span></span><br><span class="line">        mean = x.mean(-<span class="number">1</span>, keepdim=<span class="literal">True</span>)</span><br><span class="line">        std = x.std(-<span class="number">1</span>, keepdim=<span class="literal">True</span>)</span><br><span class="line">        <span class="comment"># 对 x - mean 和 (std + self.eps) 的运算仍然是逐元素的，维度与输入张量 x 一致</span></span><br><span class="line">        <span class="comment"># 最终返回的 self.a_2 * (x - mean) / (std + self.eps) + self.b_2 </span></span><br><span class="line">		<span class="comment"># 的形状为(batch_size, seq_len, emb_dim)</span></span><br><span class="line">        <span class="keyword">return</span> self.a_2 * (x - mean) / (std + self.eps) + self.b_2</span><br><span class="line"></span><br><span class="line"><span class="comment"># Encoder输出和最后进入FFN之前的Residual+LN</span></span><br><span class="line"><span class="keyword">class</span> <span class="title class_">SublayerConnection</span>(nn.Module):</span><br><span class="line"></span><br><span class="line">    <span class="keyword">def</span> <span class="title function_">__init__</span>(<span class="params">self, size, dropout</span>):</span><br><span class="line">        <span class="built_in">super</span>(SublayerConnection, self).__init__()</span><br><span class="line">        self.norm = LayerNorm(size)</span><br><span class="line">        self.dropout = nn.Dropout(dropout)</span><br><span class="line"></span><br><span class="line">    <span class="keyword">def</span> <span class="title function_">forward</span>(<span class="params">self, x, sublayer</span>):</span><br><span class="line">        <span class="keyword">return</span> x + self.dropout(sublayer(self.norm(x)))</span><br><span class="line"></span><br><span class="line">    </span><br><span class="line"><span class="keyword">class</span> <span class="title class_">PositionwiseFeedForward</span>(nn.Module):</span><br><span class="line">    <span class="keyword">def</span> <span class="title function_">__init__</span>(<span class="params">self, d_model, d_ff, dropout=<span class="number">0.1</span></span>):</span><br><span class="line">        <span class="built_in">super</span>(PositionwiseFeedForward, self).__init__()</span><br><span class="line">        self.w_1 = nn.Linear(d_model, d_ff)</span><br><span class="line">        self.w_2 = nn.Linear(d_ff, d_model)</span><br><span class="line">        self.dropout = nn.Dropout(dropout)</span><br><span class="line"></span><br><span class="line">    <span class="keyword">def</span> <span class="title function_">forward</span>(<span class="params">self, x</span>):</span><br><span class="line">        <span class="keyword">return</span> self.w_2(self.dropout(F.relu(self.w_1(x))))</span><br></pre></td></tr></table></figure>
+
+
+
+<h2 id="五、Decoder"><a href="#五、Decoder" class="headerlink" title="五、Decoder"></a>五、Decoder</h2><h3 id="5-1-理论部分"><a href="#5-1-理论部分" class="headerlink" title="5.1 理论部分"></a>5.1 理论部分</h3><p>现在我们已经涵盖了<code>Encoder</code>方面的大部分概念，我们基本上也知道了解码器的组件是如何工作的</p>
+<p>但让我们看看它们是如何协同工作的</p>
+<p><code>Encoder</code>首先处理输入序列。 然后，顶部<code>Decoder</code>的输出被转换为一组注意力向量<code>K</code>和<code> V</code>。这些向量将由每个<code>Decoder</code>在其<code>Encoder-Decoder Attention</code>层中使用，这有助于<code>Decoder</code>关注输入序列中的适当位置：</p>
+<p><img src="/2023/06/27/Transformers/transformerdecode1.gif" alt="img"></p>
+<p>以下步骤重复该过程，直到到达特殊符号，指示<code>Decoder</code>已完成其输出。 每个步骤的输出在下一个时间步骤中被馈送到底部<code>Decoder</code>，并且<code>Decoder</code>像编码器一样冒泡其解码结果</p>
+<p><img src="/2023/06/27/Transformers/transformerdecode2.gif" alt="img"></p>
+<p>我们将位置编码嵌入并添加到这些<code>Decoder</code>输入中以指示每个单词的位置，这和处理<code>Encoder</code>的输入时一样</p>
+<p><strong>但是我们要知道<code>Decoder</code>中的<code>Attention</code>层的运行方式与<code>Encoder</code>中的运行方式略有不同：</strong></p>
+<p>在<code>Decoder</code>中，<code>Attention</code>层只允许关注输出序列中较早的位置。 这是通过在自注意力计算中的 <code>softmax </code>步骤之前屏蔽未来位置（将它们设置为 -inf）来完成的，因为在推理的时候肯定不能看到后面的结果</p>
+<p><strong>“Encoder-Decoder Attention”层的工作方式与多头自注意力类似，只不过它从其下面的层创建查询矩阵，并从Encoder最后一层的输出中获取键和值矩阵</strong></p>
+<p>若仍然沿用传统<code>Seq2Seq+RNN</code>的思路, Decoder是一个<strong>顺序操作</strong>的结构, 我们代入一个场景来看看。假设我们要执行<strong>机器翻译</strong>任务, 要将<code>我 是 学生</code>翻译为<code>I am Student</code>, 假设所有参数与论文中提到的参数一样, <code>batch size</code>视为1. 根据前面已知的知识, <code>Encoder</code>堆叠后的输入和<code>Embedding</code>的大小是相同的</p>
+<p>在这里有三个词语, <code>Embedding</code>且通过<code>Encoder</code>后的编码大小为<code>(3,512)</code>。下面对<code>Decoder</code>进行训练:</p>
+<ol>
+<li>将起始符<code>&lt;start&gt;</code> 作为初始Decoder输入, 经过Decoder处理和分类得到输出<code>I</code>.</li>
+<li>将<code>&lt;start&gt; I</code>作为Decoder输入, 经过Decoder处理和分类得到输出<code>am</code>.</li>
+<li>将<code>&lt;start&gt; I am</code>作为Decoder输入, 经过Decoder处理和分类得到输出<code>Student</code>.</li>
+<li>将<code>&lt;start&gt; I am student</code>作为Decoder输入, 经过Decoder处理和分类得到结束符<code>&lt;end&gt;</code>.</li>
+</ol>
+<p>这种预测的方式也称为<strong>自回归</strong></p>
+<p>如果想做到<strong>并行</strong>训练, 需要将上面的过程转化为一个这样的矩阵直接作为<code>Decoder</code>的输入</p>
+<p>因为在<strong>训练时已知任务标签</strong>, 所以可以产生类似的效果，这种方法被称为<code>Teacher Forcing</code></p>
+<p>在论文的图中, <code>Mask</code>操作顺序被放在<code>Q</code>和<code>K</code>计算并缩放后, <code>Softmax</code>计算前。如果继续计算下去, 不做<code>Mask</code>, 与<code>V</code>相乘后得到<code>Attention</code>, 所有时间步信息全部都被泄露给<code>Decoder</code>, 必须用<code>Mask</code>将当前预测的单词信息和之后的单词信息全部遮住。</p>
+<p>遮住的方法非常简单, 首先不能使用<code>0</code>进行遮盖, 因为<code>Softmax</code>中用零填充会产生错误, <code>e^0=1</code>. 所以必须要用<code>−∞</code>来填充那些不能被看见的部分. 我们直接生成一个下三角全为<code>0</code>, 上三角全部为<strong>负无穷</strong>的矩阵, 与原数据相加就能完成遮盖的效果</p>
+<p><img src="/2023/06/27/Transformers/transformer24.png" alt="img"></p>
+<p>做<code>Softmax</code>时, 所有的负无穷全变成了<code>0</code>, 不再干扰计算:</p>
+<p><img src="/2023/06/27/Transformers/transformer25.png" alt="img"></p>
+<p>其实<code>Mask</code>在对句子的<strong>无效部分<pad>填充</pad></strong>时, 也是用同样方法将所有句子补齐, 无效部分用负无穷填充的</p>
+<p><strong>PS:</strong><code>Decoder</code>仍然依赖与先前输出结果作为输入, 所以在正式使用时不能实现并行预测, 但在训练的时结果是已知的, 可以实现并行训练</p>
+<h3 id="5-2-代码实现"><a href="#5-2-代码实现" class="headerlink" title="5.2 代码实现"></a>5.2 代码实现</h3><p><strong>Pytorch代码实现如下</strong></p>
+<figure class="highlight python"><table><tr><td class="code"><pre><span class="line"><span class="keyword">class</span> <span class="title class_">Decoder</span>(nn.Module):</span><br><span class="line">    <span class="string">&quot;Generic N layer decoder with masking.&quot;</span></span><br><span class="line"></span><br><span class="line">    <span class="keyword">def</span> <span class="title function_">__init__</span>(<span class="params">self, layer, N</span>):</span><br><span class="line">        <span class="built_in">super</span>(Decoder, self).__init__()</span><br><span class="line">        self.layers = clones(layer, N)</span><br><span class="line">        self.norm = LayerNorm(layer.size)</span><br><span class="line"></span><br><span class="line">    <span class="keyword">def</span> <span class="title function_">forward</span>(<span class="params">self, x, memory, src_mask, tgt_mask</span>):</span><br><span class="line">        <span class="keyword">for</span> layer <span class="keyword">in</span> self.layers:</span><br><span class="line">            x = layer(x, memory, src_mask, tgt_mask)</span><br><span class="line">        <span class="keyword">return</span> self.norm(x)</span><br></pre></td></tr></table></figure>
+
+<figure class="highlight python"><table><tr><td class="code"><pre><span class="line"><span class="keyword">class</span> <span class="title class_">DecoderLayer</span>(nn.Module):</span><br><span class="line">    <span class="string">&quot;Decoder is made of self-attn, src-attn, and feed forward (defined below)&quot;</span></span><br><span class="line"></span><br><span class="line">    <span class="keyword">def</span> <span class="title function_">__init__</span>(<span class="params">self, size, self_attn, src_attn, feed_forward, dropout</span>):</span><br><span class="line">        <span class="built_in">super</span>(DecoderLayer, self).__init__()</span><br><span class="line">        self.size = size</span><br><span class="line">        self.self_attn = self_attn</span><br><span class="line">        self.src_attn = src_attn</span><br><span class="line">        self.feed_forward = feed_forward</span><br><span class="line">        self.sublayer = clones(SublayerConnection(size, dropout), <span class="number">3</span>)</span><br><span class="line"></span><br><span class="line">    <span class="keyword">def</span> <span class="title function_">forward</span>(<span class="params">self, x, memory, src_mask, tgt_mask</span>):</span><br><span class="line">        <span class="string">&quot;Follow Figure 1 (right) for connections.&quot;</span></span><br><span class="line">        m = memory</span><br><span class="line">        <span class="comment"># 第一个attention是自注意力，Q，K，V 都是 x</span></span><br><span class="line">        <span class="comment"># 第二个attention的Q是上一层自注意力汇聚输出的x，K和V都是encoder编码的memory</span></span><br><span class="line">        x = self.sublayer[<span class="number">0</span>](x, <span class="keyword">lambda</span> x: self.self_attn(x, x, x, tgt_mask))</span><br><span class="line">        x = self.sublayer[<span class="number">1</span>](x, <span class="keyword">lambda</span> x: self.src_attn(x, m, m, src_mask))</span><br><span class="line">        <span class="keyword">return</span> self.sublayer[<span class="number">2</span>](x, self.feed_forward)</span><br></pre></td></tr></table></figure>
+
+<h2 id="六、The-Final-Linear-and-Softmax-Layer"><a href="#六、The-Final-Linear-and-Softmax-Layer" class="headerlink" title="六、The Final Linear and Softmax Layer"></a>六、The Final Linear and Softmax Layer</h2><p><code>Decoder</code>堆栈输出浮点数向量。 我们如何把它变成一个词？ </p>
+<p>这就是最后一个<code>Linear</code>层的工作，后面是 <code>Softmax</code> 层</p>
+<p>线性层是一个简单的全连接神经网络，它将<code>Decoder</code>堆栈产生的向量投影到一个更大的向量中，称为<code>logits</code>向量</p>
+<p>假设我们的模型知道从训练数据集中学习的 10000 个独特的英语单词（我们模型的“输出词汇”）</p>
+<p> 这将使 <code>logits</code> 向量有 10000 个单元格宽——每个单元格对应一个唯一单词的分数。 这就是我们解释线性层模型输出的方式。</p>
+<p>然后，<code>Softmax</code> 层将这些分数转换为概率（全部为正，全部加起来为 1.0）。 选择概率最高的单元格，并生成与其关联的单词作为该时间步的输出。</p>
+<p><img src="/2023/06/27/Transformers/image-20240117145150356.png" alt="image-20240117145150356"></p>
+]]></content>
+      <categories>
+        <category>论文</category>
+      </categories>
+      <tags>
+        <tag>Transformers</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>Leetcode 哈希表篇</title>
+    <url>/2024/01/14/%E5%93%88%E5%B8%8C%E8%A1%A8%E7%AF%87/</url>
+    <content><![CDATA[<p>Leetcode刷题记录——哈希表篇</p>
+<span id="more"></span>
+
+<h2 id="Leetcode242-有效的字母异位词"><a href="#Leetcode242-有效的字母异位词" class="headerlink" title="Leetcode242 有效的字母异位词"></a>Leetcode242 有效的字母异位词</h2><p>给定两个字符串 <code>s</code> 和 <code>t</code> ，编写一个函数来判断 <code>t</code> 是否是 <code>s</code> 的字母异位词。</p>
+<p><strong>Python代码如下：</strong></p>
+<figure class="highlight python"><table><tr><td class="code"><pre><span class="line"><span class="keyword">class</span> <span class="title class_">Solution</span>:</span><br><span class="line">    <span class="keyword">def</span> <span class="title function_">isAnagram</span>(<span class="params">self, s: <span class="built_in">str</span>, t: <span class="built_in">str</span></span>) -&gt; <span class="built_in">bool</span>:</span><br><span class="line">        <span class="comment"># 首先定义一个record数组, 初始化全为0</span></span><br><span class="line">        record = [<span class="number">0</span>] * <span class="number">26</span></span><br><span class="line">        <span class="comment"># 遍历s字符串, 因为都是小写字母, 所以用相对位置即可</span></span><br><span class="line">        <span class="comment"># 对于s字符串, 出现的字母下标位置+1</span></span><br><span class="line">        <span class="keyword">for</span> i <span class="keyword">in</span> s:</span><br><span class="line">            record[<span class="built_in">ord</span>(i) - <span class="built_in">ord</span>(<span class="string">&quot;a&quot;</span>)] += <span class="number">1</span></span><br><span class="line">        <span class="comment"># 对于t字符串, 出现的字母下标位置-1</span></span><br><span class="line">        <span class="keyword">for</span> i <span class="keyword">in</span> t:</span><br><span class="line">            record[<span class="built_in">ord</span>(i) - <span class="built_in">ord</span>(<span class="string">&quot;a&quot;</span>)] -= <span class="number">1</span></span><br><span class="line">        <span class="comment"># 如果, t是s的字母异位词, 那么record数组1的地方应该刚好被抵消, 全为0</span></span><br><span class="line">        <span class="comment"># 否则t不是s的字母异位词</span></span><br><span class="line">        <span class="keyword">for</span> i <span class="keyword">in</span> record:</span><br><span class="line">            <span class="keyword">if</span> i != <span class="number">0</span>:</span><br><span class="line">                <span class="keyword">return</span> <span class="literal">False</span></span><br><span class="line">        <span class="keyword">return</span> <span class="literal">True</span></span><br></pre></td></tr></table></figure>
+
+
+
+<h2 id="Leetcode349-两个数组的交集"><a href="#Leetcode349-两个数组的交集" class="headerlink" title="Leetcode349 两个数组的交集"></a>Leetcode349 两个数组的交集</h2><p><strong>Python代码如下：</strong></p>
+<figure class="highlight python"><table><tr><td class="code"><pre><span class="line"><span class="keyword">class</span> <span class="title class_">Solution</span>:</span><br><span class="line">    <span class="keyword">def</span> <span class="title function_">intersection</span>(<span class="params">self, nums1: <span class="type">List</span>[<span class="built_in">int</span>], nums2: <span class="type">List</span>[<span class="built_in">int</span>]</span>) -&gt; <span class="type">List</span>[<span class="built_in">int</span>]:</span><br><span class="line">        count1 = [<span class="number">0</span>] * <span class="number">1000</span></span><br><span class="line">        count2 = [<span class="number">0</span>] * <span class="number">1000</span></span><br><span class="line">        res = []</span><br><span class="line">        <span class="keyword">for</span> i <span class="keyword">in</span> <span class="built_in">range</span>(<span class="built_in">len</span>(nums1)):</span><br><span class="line">            count1[nums1[i]] += <span class="number">1</span></span><br><span class="line">        <span class="keyword">for</span> i <span class="keyword">in</span> <span class="built_in">range</span>(<span class="built_in">len</span>(nums2)):</span><br><span class="line">            count2[nums2[i]] += <span class="number">1</span></span><br><span class="line">        <span class="keyword">for</span> i <span class="keyword">in</span> <span class="built_in">range</span>(<span class="built_in">len</span>(count1)):</span><br><span class="line">            <span class="keyword">if</span> count1[i] * count2[i] &gt; <span class="number">0</span>:</span><br><span class="line">                res.append(i)</span><br><span class="line">        <span class="keyword">return</span> res</span><br></pre></td></tr></table></figure>
+
+
+
+<h2 id="Leetcode202-快乐数"><a href="#Leetcode202-快乐数" class="headerlink" title="Leetcode202 快乐数"></a>Leetcode202 快乐数</h2><p>题目中说了会 <strong>无限循环</strong>，那么也就是说<strong>求和的过程中，sum会重复出现，这对解题很重要</strong></p>
+<p><strong>当我们遇到了要快速判断一个元素是否出现集合里的时候，就要考虑哈希法了。</strong></p>
+<p>所以这道题目使用哈希法，来判断这个<code>sum</code>是否重复出现，如果重复了就是<code>return False</code>， 否则一直找到<code>sum</code>为1为止。</p>
+<p><strong>Python代码如下：</strong></p>
+<figure class="highlight python"><table><tr><td class="code"><pre><span class="line"><span class="keyword">class</span> <span class="title class_">Solution</span>:</span><br><span class="line">    <span class="keyword">def</span> <span class="title function_">isHappy</span>(<span class="params">self, n: <span class="built_in">int</span></span>) -&gt; <span class="built_in">bool</span>:</span><br><span class="line">        res = <span class="built_in">set</span>()</span><br><span class="line">        <span class="keyword">while</span> n != <span class="number">1</span>:</span><br><span class="line">            <span class="built_in">sum</span> = <span class="number">0</span></span><br><span class="line">            <span class="keyword">for</span> i <span class="keyword">in</span> <span class="built_in">str</span>(n):</span><br><span class="line">                <span class="built_in">sum</span> += <span class="built_in">int</span>(i) ** <span class="number">2</span></span><br><span class="line">            <span class="keyword">if</span> <span class="built_in">sum</span> <span class="keyword">in</span> res:</span><br><span class="line">                <span class="keyword">return</span> <span class="literal">False</span></span><br><span class="line">            res.add(<span class="built_in">sum</span>)</span><br><span class="line">            n = <span class="built_in">sum</span></span><br><span class="line">        <span class="keyword">return</span> <span class="literal">True</span></span><br></pre></td></tr></table></figure>
+
+
+
+<h2 id="Leetcode1-两数之和"><a href="#Leetcode1-两数之和" class="headerlink" title="Leetcode1 两数之和"></a>Leetcode1 两数之和</h2><p>简单的方式是直接两层<code>for</code>循环遍历所有可能的情况，但复杂度是O(n^2)</p>
+<p>用<code>map</code>，也就是字典来解题</p>
+<p>首先遍历<code>nums</code>，判断<code>target - value</code>是否出现在字典，若字典里有，则返回相应的下标</p>
+<p>若没有，则将<code>value-index</code>这对键值对加入字典</p>
+<p><strong>Python代码如下：</strong></p>
+<figure class="highlight python"><table><tr><td class="code"><pre><span class="line"><span class="keyword">class</span> <span class="title class_">Solution</span>:</span><br><span class="line">    <span class="keyword">def</span> <span class="title function_">twoSum</span>(<span class="params">self, nums: <span class="type">List</span>[<span class="built_in">int</span>], target: <span class="built_in">int</span></span>) -&gt; <span class="type">List</span>[<span class="built_in">int</span>]:</span><br><span class="line">        <span class="built_in">map</span> = &#123;&#125;</span><br><span class="line">        res = []</span><br><span class="line">        <span class="keyword">for</span> index, value <span class="keyword">in</span> <span class="built_in">enumerate</span>(nums):</span><br><span class="line">            <span class="keyword">if</span> target - value <span class="keyword">in</span> <span class="built_in">map</span>:</span><br><span class="line">                res.append(index)</span><br><span class="line">                res.append(<span class="built_in">map</span>[target-value])</span><br><span class="line">            <span class="keyword">if</span> value <span class="keyword">not</span> <span class="keyword">in</span> <span class="built_in">map</span>:</span><br><span class="line">                <span class="built_in">map</span>[value] = index</span><br><span class="line">        <span class="keyword">return</span> res</span><br></pre></td></tr></table></figure>
+
+
+
+
+
+<h2 id="Leetcode383-赎金信"><a href="#Leetcode383-赎金信" class="headerlink" title="Leetcode383 赎金信"></a>Leetcode383 赎金信</h2><p>题目中说：<code>magazine</code> 中的每个字符只能在 <code>ransomNote</code> 中使用一次</p>
+<p>那么就考虑哈希表的思路去做</p>
+<p>首先遍历<code>magazine</code>  ，将其中的字符以及个数添加到<code>map</code>中</p>
+<p>再遍历<code>ransomNote</code>，如果其中字符存在<code>map</code>中，且<code>map[i] &gt; 0</code>，则对应<code> -1</code>，否则返回<code>False</code></p>
+<p>若循环顺利结束，说明条件成立，返回<code>True</code> </p>
+<p><strong>Python代码如下：</strong></p>
+<figure class="highlight python"><table><tr><td class="code"><pre><span class="line"><span class="keyword">class</span> <span class="title class_">Solution</span>:</span><br><span class="line">    <span class="keyword">def</span> <span class="title function_">canConstruct</span>(<span class="params">self, ransomNote: <span class="built_in">str</span>, magazine: <span class="built_in">str</span></span>) -&gt; <span class="built_in">bool</span>:</span><br><span class="line">        <span class="built_in">map</span> = &#123;&#125;</span><br><span class="line">        <span class="keyword">for</span> i <span class="keyword">in</span> magazine:</span><br><span class="line">            <span class="built_in">map</span>[i] = <span class="built_in">map</span>.get(i, <span class="number">0</span>) + <span class="number">1</span></span><br><span class="line">        <span class="keyword">for</span> i <span class="keyword">in</span> ransomNote:</span><br><span class="line">            <span class="keyword">if</span> i <span class="keyword">in</span> <span class="built_in">map</span> <span class="keyword">and</span> <span class="built_in">map</span>[i] &gt; <span class="number">0</span>:</span><br><span class="line">                <span class="built_in">map</span>[i] -= <span class="number">1</span></span><br><span class="line">            <span class="keyword">else</span>:</span><br><span class="line">                <span class="keyword">return</span> <span class="literal">False</span></span><br><span class="line">        <span class="keyword">return</span> <span class="literal">True</span></span><br></pre></td></tr></table></figure>
+
+
+
+<h2 id="Leetcode454-四数相加II"><a href="#Leetcode454-四数相加II" class="headerlink" title="Leetcode454 四数相加II"></a>Leetcode454 四数相加II</h2><p>首先定义一个<code>map</code>，<code>key</code>是<code>a+b</code>的值，<code>value</code>是其出现的次数</p>
+<p>再遍历<code>c+d</code>，若相加<code>=0</code>，则<code>count</code>加上对应的<code>value</code></p>
+<p><strong>Python代码如下：</strong></p>
+<figure class="highlight python"><table><tr><td class="code"><pre><span class="line"><span class="keyword">class</span> <span class="title class_">Solution</span>:</span><br><span class="line">    <span class="keyword">def</span> <span class="title function_">fourSumCount</span>(<span class="params">self, nums1: <span class="type">List</span>[<span class="built_in">int</span>], nums2: <span class="type">List</span>[<span class="built_in">int</span>], nums3: <span class="type">List</span>[<span class="built_in">int</span>], nums4: <span class="type">List</span>[<span class="built_in">int</span>]</span>) -&gt; <span class="built_in">int</span>:</span><br><span class="line">        <span class="built_in">map</span> = &#123;&#125;</span><br><span class="line">        count = <span class="number">0</span></span><br><span class="line">        <span class="keyword">for</span> a <span class="keyword">in</span> nums1:</span><br><span class="line">            <span class="keyword">for</span> b <span class="keyword">in</span> nums2:</span><br><span class="line">                <span class="built_in">map</span>[a+b] = <span class="built_in">map</span>.get(a+b, <span class="number">0</span>) + <span class="number">1</span></span><br><span class="line">        <span class="keyword">for</span> c <span class="keyword">in</span> nums3:</span><br><span class="line">            <span class="keyword">for</span> d <span class="keyword">in</span> nums4:</span><br><span class="line">                <span class="keyword">if</span> -(c+d) <span class="keyword">in</span> <span class="built_in">map</span> <span class="keyword">and</span> <span class="built_in">map</span>[-(c+d)] &gt; <span class="number">0</span>:</span><br><span class="line">                    count += <span class="built_in">map</span>[-(c+d)]</span><br><span class="line">        <span class="keyword">return</span> count</span><br></pre></td></tr></table></figure>
+
+
+
+<h2 id="Leetcode15-三数之和"><a href="#Leetcode15-三数之和" class="headerlink" title="Leetcode15 三数之和"></a>Leetcode15 三数之和</h2><p>首先将数组排序，然后有一层<code>for</code>循环，<code>i</code>从下标0的地方开始</p>
+<p>同时定一个下标<code>left</code> 定义在<code>i+1</code>的位置上，定义下标<code>right</code>在数组结尾的位置上。</p>
+<p>依然还是在数组中找到 <code>abc </code>使得<code>a + b +c =0</code></p>
+<p>我们这里相当于 <code>a = nums[i]</code>，<code>b = nums[left]</code>，<code>c = nums[right]</code></p>
+<p>接下来如何移动<code>left</code>和<code>right</code>呢， 如果<code>nums[i] + nums[left] + nums[right] &gt; 0 </code>就说明 此时三数之和大了，因为数组是排序后了，所以<code>right</code>下标就应该向左移动，这样才能让三数之和小一些。</p>
+<p>如果 <code>nums[i] + nums[left] + nums[right] &lt; 0</code> 说明此时三数之和小了，<code>left</code> 就向右移动，才能让三数之和大一些，直到<code>left</code>与<code>right</code>相遇为止。</p>
+<p><strong>Python代码如下：</strong></p>
+<figure class="highlight python"><table><tr><td class="code"><pre><span class="line"><span class="keyword">class</span> <span class="title class_">Solution</span>:</span><br><span class="line">    <span class="keyword">def</span> <span class="title function_">threeSum</span>(<span class="params">self, nums: <span class="type">List</span>[<span class="built_in">int</span>]</span>) -&gt; <span class="type">List</span>[<span class="type">List</span>[<span class="built_in">int</span>]]:</span><br><span class="line">        res = []</span><br><span class="line">        nums.sort()</span><br><span class="line">        <span class="keyword">for</span> i <span class="keyword">in</span> <span class="built_in">range</span>(<span class="built_in">len</span>(nums)):</span><br><span class="line">            <span class="comment"># 因为是排序后的, 如果nums[i], 那就没必要继续了</span></span><br><span class="line">            <span class="keyword">if</span> nums[i] &gt; <span class="number">0</span>:</span><br><span class="line">                <span class="keyword">return</span> res</span><br><span class="line">            <span class="comment"># 每次i往后一位时，需要判断与之前是否相同,因为会重复</span></span><br><span class="line">            <span class="comment"># 看参考样例[-1,0,1,2,-1,-4]</span></span><br><span class="line">            <span class="keyword">if</span> i&gt; <span class="number">0</span> <span class="keyword">and</span> nums[i] == nums[i-<span class="number">1</span>]:</span><br><span class="line">                <span class="keyword">continue</span></span><br><span class="line">            left = i + <span class="number">1</span></span><br><span class="line">            right = <span class="built_in">len</span>(nums) - <span class="number">1</span></span><br><span class="line">            <span class="keyword">while</span> left &lt; right:</span><br><span class="line">                <span class="built_in">sum</span> = nums[i] + nums[left] + nums[right]</span><br><span class="line">                <span class="keyword">if</span> <span class="built_in">sum</span> &gt; <span class="number">0</span>:</span><br><span class="line">                    right -= <span class="number">1</span></span><br><span class="line">                <span class="keyword">elif</span> <span class="built_in">sum</span> &lt; <span class="number">0</span>:</span><br><span class="line">                    left += <span class="number">1</span></span><br><span class="line">                <span class="keyword">else</span>:</span><br><span class="line">                    res.append([nums[i], nums[left], nums[right]])</span><br><span class="line">                    <span class="comment"># 当前位置匹配成功过,跳过相同元素避免重复</span></span><br><span class="line">                    <span class="keyword">while</span> left &lt; right <span class="keyword">and</span> nums[right] == nums[right-<span class="number">1</span>]:</span><br><span class="line">                        right -= <span class="number">1</span></span><br><span class="line">                    <span class="keyword">while</span> left &lt; right <span class="keyword">and</span> nums[left] == nums[left+<span class="number">1</span>]:</span><br><span class="line">                        left += <span class="number">1</span></span><br><span class="line">                    right -= <span class="number">1</span></span><br><span class="line">                    left += <span class="number">1</span></span><br><span class="line">        <span class="keyword">return</span> res</span><br></pre></td></tr></table></figure>
+
+
+
+<h2 id="Leetcode18-四数之和"><a href="#Leetcode18-四数之和" class="headerlink" title="Leetcode18 四数之和"></a>Leetcode18 四数之和</h2><p>四数之和的双指针解法是两层<code>for</code>循环<code>nums[i] + nums[j]</code>为确定值，依然是循环内有<code>left</code>和<code>right</code>下标作为双指针，找出<code>nums[i] + nums[j] + nums[left] + nums[right] == target</code>的情况，三数之和的时间复杂度是<code>O(n^2)</code>，四数之和的时间复杂度是<code>O(n^3)</code> 。</p>
+<figure class="highlight python"><table><tr><td class="code"><pre><span class="line"><span class="keyword">class</span> <span class="title class_">Solution</span>:</span><br><span class="line">    <span class="keyword">def</span> <span class="title function_">fourSum</span>(<span class="params">self, nums: <span class="type">List</span>[<span class="built_in">int</span>], target: <span class="built_in">int</span></span>) -&gt; <span class="type">List</span>[<span class="type">List</span>[<span class="built_in">int</span>]]:</span><br><span class="line">        nums.sort()</span><br><span class="line">        res = []</span><br><span class="line">        <span class="keyword">for</span> i <span class="keyword">in</span> <span class="built_in">range</span>(<span class="built_in">len</span>(nums)):</span><br><span class="line">            <span class="keyword">if</span> i &gt; <span class="number">0</span> <span class="keyword">and</span> nums[i] == nums[i-<span class="number">1</span>]:</span><br><span class="line">                <span class="keyword">continue</span></span><br><span class="line">            <span class="keyword">for</span> j <span class="keyword">in</span> <span class="built_in">range</span>(i+<span class="number">1</span>, <span class="built_in">len</span>(nums)):</span><br><span class="line">                <span class="keyword">if</span> j &gt; i+<span class="number">1</span> <span class="keyword">and</span> nums[j] == nums[j-<span class="number">1</span>]:</span><br><span class="line">                    <span class="keyword">continue</span></span><br><span class="line">                left = j + <span class="number">1</span></span><br><span class="line">                right = <span class="built_in">len</span>(nums) - <span class="number">1</span></span><br><span class="line">                <span class="keyword">while</span> left &lt; right:</span><br><span class="line">                    <span class="built_in">sum</span> = nums[i] + nums[j] + nums[left] + nums[right]</span><br><span class="line">                    <span class="keyword">if</span> <span class="built_in">sum</span> &gt; target:</span><br><span class="line">                        right -= <span class="number">1</span></span><br><span class="line">                    <span class="keyword">elif</span> <span class="built_in">sum</span> &lt; target:</span><br><span class="line">                        left += <span class="number">1</span></span><br><span class="line">                    <span class="keyword">else</span>:</span><br><span class="line">                        res.append([nums[i], nums[j], nums[left], nums[right]])</span><br><span class="line">                        <span class="keyword">while</span> left &lt; right <span class="keyword">and</span> nums[left] == nums[left+<span class="number">1</span>]:</span><br><span class="line">                            left += <span class="number">1</span></span><br><span class="line">                        <span class="keyword">while</span> left &lt; right <span class="keyword">and</span> nums[right] == nums[right-<span class="number">1</span>]:</span><br><span class="line">                            right -= <span class="number">1</span></span><br><span class="line">                        left += <span class="number">1</span></span><br><span class="line">                        right -= <span class="number">1</span></span><br><span class="line">        <span class="keyword">return</span> res</span><br></pre></td></tr></table></figure>
+
+]]></content>
+      <categories>
+        <category>Leetcode 刷题</category>
+      </categories>
+      <tags>
+        <tag>Leetcode</tag>
+        <tag>哈希表</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>Leetcode 字符串篇</title>
+    <url>/2024/01/18/%E5%AD%97%E7%AC%A6%E4%B8%B2%E7%AF%87/</url>
+    <content><![CDATA[<p>Leetcode刷题记录——字符串篇</p>
+<span id="more"></span>
+
+<h2 id="Leetcode344-反转字符串"><a href="#Leetcode344-反转字符串" class="headerlink" title="Leetcode344 反转字符串"></a>Leetcode344 反转字符串</h2><p><strong>Python代码如下：</strong></p>
+<figure class="highlight python"><table><tr><td class="code"><pre><span class="line"><span class="keyword">class</span> <span class="title class_">Solution</span>:</span><br><span class="line">    <span class="keyword">def</span> <span class="title function_">reverseString</span>(<span class="params">self, s: <span class="type">List</span>[<span class="built_in">str</span>]</span>) -&gt; <span class="literal">None</span>:</span><br><span class="line">        <span class="string">&quot;&quot;&quot;</span></span><br><span class="line"><span class="string">        Do not return anything, modify s in-place instead.</span></span><br><span class="line"><span class="string">        &quot;&quot;&quot;</span></span><br><span class="line">        left = <span class="number">0</span></span><br><span class="line">        right = <span class="built_in">len</span>(s) - <span class="number">1</span></span><br><span class="line">        <span class="keyword">while</span> left &lt; right:</span><br><span class="line">            <span class="comment"># s[left], s[right] = s[right], s[left]</span></span><br><span class="line">            <span class="comment"># Python 的一项语法糖，它可以在不借助临时变量的情况下直接交换两个变量的值</span></span><br><span class="line">            temp = s[left]</span><br><span class="line">            s[left] = s[right]</span><br><span class="line">            s[right] = temp</span><br><span class="line">            left += <span class="number">1</span></span><br><span class="line">            right -= <span class="number">1</span></span><br></pre></td></tr></table></figure>
+
+<h2 id="Leetcode541-反转字符串Ⅱ"><a href="#Leetcode541-反转字符串Ⅱ" class="headerlink" title="Leetcode541 反转字符串Ⅱ"></a>Leetcode541 反转字符串Ⅱ</h2><p>每隔<code>2k</code>个字符，反转前<code>k</code>个，后<code>k</code>个不动</p>
+<p>当循环结束时，判断剩余字符数量的区间，做不同的反转操作</p>
+<p><strong>Python代码如下：</strong></p>
+<figure class="highlight python"><table><tr><td class="code"><pre><span class="line"><span class="keyword">class</span> <span class="title class_">Solution</span>:</span><br><span class="line">    <span class="keyword">def</span> <span class="title function_">reverseStr</span>(<span class="params">self, s: <span class="built_in">str</span>, k: <span class="built_in">int</span></span>) -&gt; <span class="built_in">str</span>:</span><br><span class="line">        length = <span class="built_in">len</span>(s)</span><br><span class="line">        i = <span class="number">0</span></span><br><span class="line">        res = []</span><br><span class="line">        <span class="keyword">while</span> i &lt; length <span class="keyword">and</span> i+<span class="number">2</span>*k &lt;= length:</span><br><span class="line">            temp = s[i:i+k][::-<span class="number">1</span>]</span><br><span class="line">            res.append(temp)</span><br><span class="line">            res.append(s[i+k:i+<span class="number">2</span>*k])</span><br><span class="line">            i = i + <span class="number">2</span>*k</span><br><span class="line">        <span class="keyword">if</span> length - i &lt; k:</span><br><span class="line">            temp = s[i:][::-<span class="number">1</span>]</span><br><span class="line">            res.append(temp)</span><br><span class="line">        <span class="keyword">if</span> length - i &lt; <span class="number">2</span>*k <span class="keyword">and</span> length - i &gt;= k:</span><br><span class="line">            temp = s[i:i+k][::-<span class="number">1</span>]</span><br><span class="line">            res.append(temp)</span><br><span class="line">            res.append(s[i+k:])</span><br><span class="line">        </span><br><span class="line">        <span class="keyword">return</span> <span class="string">&#x27;&#x27;</span>.join(res)</span><br></pre></td></tr></table></figure>
+
+<h2 id="Leetcode151-翻转字符串里的单词"><a href="#Leetcode151-翻转字符串里的单词" class="headerlink" title="Leetcode151 翻转字符串里的单词"></a>Leetcode151 翻转字符串里的单词</h2><p>首先用一个<code>split</code>函数分割字符串</p>
+<p>再用双指针，同样的反转字符串的操作</p>
+<p>最后用 <code>&#39; &#39;.join()</code>合并就可以了</p>
+<p><strong>Python代码如下：</strong></p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">class Solution:</span><br><span class="line">    def reverseWords(self, s: str) -&gt; str:</span><br><span class="line">        words = s.split()</span><br><span class="line">        left = 0</span><br><span class="line">        right = len(words) - 1</span><br><span class="line">        while left &lt; right:</span><br><span class="line">            words[left], words[right] = words[right], words[left]</span><br><span class="line">            left += 1</span><br><span class="line">            right -= 1</span><br><span class="line">        return &#x27; &#x27;.join(words)</span><br></pre></td></tr></table></figure>
+
+<h2 id="Leetcode28-找出字符串中第一个匹配项的下标"><a href="#Leetcode28-找出字符串中第一个匹配项的下标" class="headerlink" title="Leetcode28 找出字符串中第一个匹配项的下标"></a>Leetcode28 找出字符串中第一个匹配项的下标</h2><p><code>KMP</code>思想</p>
+<p>主要是求出根据子串求<code>next</code>数组</p>
+<p>讲起来太抽象，可以看代码随想录</p>
+<p><strong>Python代码如下：</strong></p>
+<figure class="highlight python"><table><tr><td class="code"><pre><span class="line"><span class="keyword">class</span> <span class="title class_">Solution</span>:</span><br><span class="line">    <span class="keyword">def</span> <span class="title function_">strStr</span>(<span class="params">self, haystack: <span class="built_in">str</span>, needle: <span class="built_in">str</span></span>) -&gt; <span class="built_in">int</span>:</span><br><span class="line">        <span class="built_in">next</span> = [<span class="number">0</span>] * <span class="built_in">len</span>(needle)</span><br><span class="line">        j = <span class="number">0</span></span><br><span class="line">        <span class="keyword">for</span> i <span class="keyword">in</span> <span class="built_in">range</span>(<span class="number">1</span>, <span class="built_in">len</span>(needle)):</span><br><span class="line">            <span class="keyword">while</span> j &gt; <span class="number">0</span> <span class="keyword">and</span> needle[i] != needle[j]:</span><br><span class="line">                j = <span class="built_in">next</span>[j-<span class="number">1</span>]</span><br><span class="line">            <span class="keyword">if</span> needle[i] == needle[j]:</span><br><span class="line">                j += <span class="number">1</span></span><br><span class="line">            <span class="built_in">next</span>[i] = j</span><br><span class="line">        </span><br><span class="line">        j = <span class="number">0</span></span><br><span class="line">        <span class="keyword">for</span> i <span class="keyword">in</span> <span class="built_in">range</span>(<span class="built_in">len</span>(haystack)):</span><br><span class="line">            <span class="keyword">while</span> j &gt; <span class="number">0</span> <span class="keyword">and</span> haystack[i] != needle[j]:</span><br><span class="line">                j = <span class="built_in">next</span>[j-<span class="number">1</span>]</span><br><span class="line">            <span class="keyword">if</span> haystack[i] == needle[j]:</span><br><span class="line">                j += <span class="number">1</span></span><br><span class="line">            <span class="keyword">if</span> j == <span class="built_in">len</span>(needle):</span><br><span class="line">                <span class="keyword">return</span> i-j+<span class="number">1</span></span><br><span class="line">        <span class="keyword">return</span> -<span class="number">1</span></span><br><span class="line">        </span><br></pre></td></tr></table></figure>
+
+<h2 id="Leetcode459-重复的子字符串"><a href="#Leetcode459-重复的子字符串" class="headerlink" title="Leetcode459 重复的子字符串"></a>Leetcode459 重复的子字符串</h2><p>如果这个字符串包含重复的子串</p>
+<p>假设是字符串<code>abcabc</code>，记为<code>s</code></p>
+<p>那么<code>s</code>一定包含在<code>s+s</code>内</p>
+<p>所以判断字符串<code>s</code>是否由重复子串组成，只要两个<code>s</code>拼接在一起，里面还出现一个<code>s</code>的话，就说明是由重复子串组成</p>
+<p>我们在判断<code> s + s</code>拼接的字符串里是否出现一个<code>s</code>的的时候，<strong>要刨除 s + s 的首字符和尾字符</strong>，这样避免在<code>s+s</code>中搜索出原来的<code>s</code>，我们要搜索的是中间拼接出来的<code>s</code></p>
+<p>还是回到了<code>KMP</code>算法</p>
+<p>只不过这道题的模式串变成了<code>(s+s)[1:-1]</code><strong>（拼接再去掉首位字符）</strong></p>
+<p>子串变成了<code>s</code></p>
+<p><strong>Python代码如下：</strong></p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">class Solution:</span><br><span class="line">    def repeatedSubstringPattern(self, s: str) -&gt; bool:</span><br><span class="line">        next = [0] * len(s)</span><br><span class="line">        j = 0</span><br><span class="line">        needle = (s+s)[1:-1]</span><br><span class="line">        for i in range(1, len(s)):</span><br><span class="line">            while j &gt; 0 and s[j] != s[i]:</span><br><span class="line">                j = next[j-1]</span><br><span class="line">            if s[j] == s[i]:</span><br><span class="line">                j += 1</span><br><span class="line">            next[i] = j</span><br><span class="line">        </span><br><span class="line">        j = 0</span><br><span class="line">        needle = (s+s)[1:-1]</span><br><span class="line">        for i in range(len(needle)):</span><br><span class="line">            while j &gt; 0 and needle[i] != s[j]:</span><br><span class="line">                j = next[j-1]</span><br><span class="line">            if needle[i] == s[j]:</span><br><span class="line">                j += 1</span><br><span class="line">            if j == len(s):</span><br><span class="line">                return True</span><br><span class="line">        return False</span><br></pre></td></tr></table></figure>
+
+]]></content>
+      <categories>
+        <category>Leetcode 刷题</category>
+      </categories>
+      <tags>
+        <tag>Leetcode</tag>
+        <tag>字符串</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>Parameter Efficient Fine-Tuning(PEFT)系列论文总结(三)</title>
+    <url>/2023/12/29/Parameter%20Efficient%20Fine-Tuning(PEFT)%E7%B3%BB%E5%88%97%E8%AE%BA%E6%96%87%E6%80%BB%E7%BB%93(%E4%B8%89)/</url>
+    <content><![CDATA[<p>承接上篇Parameter Efficient Fine-Tuning(PEFT)系列论文总结(二)，本篇主要介绍LoRA及其各种变体的微调方法。</p>
+<span id="more"></span>
+
+<h2 id="一、LoRA"><a href="#一、LoRA" class="headerlink" title="一、LoRA"></a>一、LoRA</h2><p>研究表明，语言模型针对特定任务微调之后，权重矩阵通常具有很低的本征秩 <code>（Intrinsic Rank）</code>。研究人员认为参数更新量即便投影到较小的子空间中，也不会影响学习的有效性。因此，提出固定预训练模型参数不变，在原本权重矩阵旁路添加低秩矩阵的乘积作为可训练参数，用以模拟参数的变化量。具体来说，假设预训练权重为${w_0\ \epsilon \ \mathbb{R}^{d<em>k}}$，可训练参数为${\varDelta W\ &#x3D;\ BA}$，其中${B\ \epsilon \ \mathbb{R}^{d</em>r} }$，${A\ \epsilon \ \mathbb{R}^{r*d}}$，初始化时，矩阵 ${A}$ 通过高斯函数初始化，矩阵${B}$ 为零初始化，使得训练开始之前旁路对原模型不造成影响，即参数改变量为 0。对于该权重的输入 ${x}$ 来说，输出为式${h\ &#x3D;\ W_0x+∆W\ x\ &#x3D;W_0x+BAx}$，<code>LoRA</code>算法结构方法如图：</p>
+<img src="/2023/12/29/Parameter%20Efficient%20Fine-Tuning(PEFT)%E7%B3%BB%E5%88%97%E8%AE%BA%E6%96%87%E6%80%BB%E7%BB%93(%E4%B8%89)/image-20240110192331072.png" alt="image-20240110192331072" style="zoom:80%;">
+
+<p>简言之，<code>LoRA</code>的核心思想是用一种低秩的方式来调整这些参数矩阵。在数学上，低秩意味着一个矩阵可以用两个较小的矩阵相乘来近似。</p>
+<p><strong>LoRA实现步骤如下：</strong></p>
+<p>1、选择目标层</p>
+<p>首先，在预训练神经网络模型中选择要应用<code>LoRA</code>的目标层。这些层通常是与特定任务相关的，如自注意力机制中的查询<code>Q</code>和键<code>K</code>矩阵</p>
+<p>值得注意的是，原则上，可以将<code>LoRA</code>应用于神经网络中权矩阵的任何子集，以减少可训练参数的数量。在<code>Transformer</code>体系结构中，<code>Self-Attetion</code>模块(<code>Wq</code>、<code>Wk</code>、<code>Wv</code>、<code>Wo</code>)中有四个权重矩阵，<code>MLP</code>模块中有两个权重矩阵。我们将<code>Wq</code>(或<code>Wk</code>，<code>Wv</code>)作为维度的单个矩阵，尽管输出维度通常被切分为注意力头。<br><em>(In principle, we can apply LoRA to any subset of weight matrices in a neural network to reduce th enumber of trainable parameters. In the Transformer architecture, there are four weight matrices in the self-attention module (Wq, Wk, Wv, Wo) and two in the MLP module. We treat Wq (or Wk, Wv)as a single matrix of dimension , even though the output dimension is usually sliced into attention heads)</em></p>
+<p>不过，为了简单和参数效率，将研究限制为仅适应下游任务的注意力权重，并冻结<code>MLP</code>模块(因此它们不接受下游任务的训练)</p>
+<p>(We limit our study to only adapting the attention weights for downstream tasks and freeze the MLP modules (so they are not trained in downstream tasks) both for simplicity and parameter-efficiency)<br>2、初始化映射矩阵和逆映射矩阵</p>
+<p>为目标层创建两个较小的矩阵<code>A</code>和<code>B</code>，然后进行变换</p>
+<p><code>A</code>是映射矩阵(一般用随机高斯分布初始化，维度上是降维）</p>
+<p><code>B</code>是逆映射矩阵(用0矩阵初始化)，维度上是升维</p>
+<p>之后做参数变换：将目标层的原始参数矩阵W通过映射矩阵<code>A</code>和逆映射矩阵<code>B</code>进行变换，计算公式为：<code>W&#39; = W + A * B</code>，这里<code>W&#39;</code>是变换后的参数矩阵</p>
+<p>3、微调模型</p>
+<p>使用新的参数矩阵<code>W&#39;</code>替换目标层的原始参数矩阵<code>W</code>，然后在特定任务的训练数据上对模型进行微调</p>
+<p>4、梯度更新</p>
+<p>在微调过程中，计算损失函数关于映射矩阵<code>A</code>和逆映射矩阵<code>B</code>的梯度，并使用优化算法(如<code>Adam</code>、<code>SGD</code>等)对<code>A</code>和<code>B</code>进行更新<br>注意，在更新过程中，原始参数矩阵<code>W</code>保持不变</p>
+<p>说白了，<strong>训练的时候固定原始PLM的参数，只训练降维矩阵A与升维矩阵B</strong></p>
+<p>且当需要切换到另一个下游任务时，可以通过减去<code>BA</code>然后添加不同的<code>B&#39;A&#39;</code>来恢复<code>W</code>，这是一个内存开销很小的快速操作*(When we need to switch to another downstream task, we can recover W0 by subtracting BA and then adding a different B0A0, a quick operation with very little memory overhead )*</p>
+<h2 id="二、AdaLoRA"><a href="#二、AdaLoRA" class="headerlink" title="二、AdaLoRA"></a>二、AdaLoRA</h2><p>从上文介绍的<code>LoRA</code>可以看出它的局限性：在一个模型的所有使用适配器的模块都使用了同一个<code>r</code>，但是无论是不同深度的参数，还是同一个深度不同模块的参数，它们在模型中的重要性都是不同的。例如下图的这两个例子，作者通过只对特定的模块进行微调，得出了不同参数的重要性的可视化结果。从中我们可以看出，自注意机制的全连接层要比计算 <code>Wq</code>，<code>Wk</code> ，<code>Wv</code>的权值重要，而更深层的参数要比更浅层的参数重要。</p>
+<img src="/2023/12/29/Parameter%20Efficient%20Fine-Tuning(PEFT)%E7%B3%BB%E5%88%97%E8%AE%BA%E6%96%87%E6%80%BB%E7%BB%93(%E4%B8%89)/image-20240110202455667.png" alt="image-20240110202455667" style="zoom:80%;">
+
+<p><strong>AdaLoRA的动机</strong></p>
+<p>因为在一个模型中，不同模块拥有着不同的贡献，那么在使用<code>LoRA</code>时如果我们能够根据它们重要性的不同为不同的模块分配不同的秩，那么将会带来很多好处。首先，我们为重要性更低的模块分配更小的秩，那么将有效的减少模型的计算量。其次，如果我们能够为更重要的特征分配更大的秩，那么将能够更有效的捕捉特征的细节信息。</p>
+<p>具体的过程数学要求有点高，先不看了</p>
+<p> <strong>总结</strong></p>
+<p><code>AdaLoRA</code>通过将所有添加了适配器的模块的秩的值看做了一组超参，然后通过模型剪枝的思想对<code>LoRA</code>的秩进行了自适应的计算。同时为了剪枝后模型效果的稳定，<code>AdaLoRA</code>使用<code>SVD</code>的三元组替代了<code>LoRA</code>的二元组，充分利用了<code>SVD</code>奇异矩阵的正交性和奇异向量的绝对值和特征重要性的相关性设计剪枝策略。</p>
+<h2 id="三、QLoRA"><a href="#三、QLoRA" class="headerlink" title="三、QLoRA"></a>三、QLoRA</h2><p>讲<code>QLoRA</code>之前，首先得明白什么是<strong>模型量化</strong></p>
+<p><strong>模型量化</strong>（Quantization）也被叫做模型的低精度表示，指的是在不大幅降低模型效果的前提下使用更低的精度来表示模型中的参数，从而缩减模型的体积和训练模型时占用的显存。量化的本质是函数映射，根据量化过程是否线性我们可以把量化分为<strong>线性量化</strong>和<strong>非线性量化</strong>。</p>
+<p>模型量化的核心工作就是在尽量保证模型准确率的前提下优化模型的推理速度和模型体积。</p>
+<p>与量化对应的是反量化（<code>Dequantization</code>），反量化指的是将模型的低精度恢复为高精度的过程，主要用于减少量化造成的精度损失</p>
+<p>简单来讲，模型量化是将浮点数值转化为定点数值，同时尽可能减少计算精度损失的方法。<br>模型量化是一种压缩网络参数的方式，它将神经网络的参数(<code>weight</code>)、激活值(<code>activation</code>)等原本用浮点表示的量值换用定点(整型)表示，在计算过程中，再将定点数据反量化回浮点数据，得到结果。</p>
+<p>我们可以对模型参数(<code>weight</code>)、激活值(<code>activation</code>)或者梯度(<code>gradient</code>)做量化。通常而言，模型的参数分布较为稳定，因此对参数 <code>weight</code> 做量化较为容易(比如，<code>QLoRA</code>便是对<code>weight</code>做量化)<br>至于模型的激活值往往存在异常值，直接对其做量化，会降低有效的量化格点数，导致精度损失严重，因此，激活值的量化需要更复杂的处理方法(如<code>SmoothQuant</code>)</p>
+<img src="/2023/12/29/Parameter%20Efficient%20Fine-Tuning(PEFT)%E7%B3%BB%E5%88%97%E8%AE%BA%E6%96%87%E6%80%BB%E7%BB%93(%E4%B8%89)/image-20240112135538529.png" alt="image-20240112135538529" style="zoom:80%;">
+
+
+
+<p><strong>QLoRA的工作有三个</strong></p>
+<p>1、结合了分位数量化和分块量化的<strong>4位标准浮点数量化</strong>（4-bit NormalFloat Quantization）</p>
+<p>2、对模型进行两次量化的<strong>双重量化</strong>（Double Quantization），它的第二次量化只作用在第一次量化产生的量化常数上，可以进一步节约显存占用</p>
+<p>3、<strong>分页优化</strong>（Paged Optimizer），使用<code>CPU</code>内存代替<code>GPU</code>显存保存部分梯度参数</p>
+<p>留到之后理解更深了再更新</p>
+]]></content>
+      <categories>
+        <category>论文</category>
+      </categories>
+      <tags>
+        <tag>PEFT</tag>
+      </tags>
   </entry>
   <entry>
     <title>Leetcode 数组篇</title>
@@ -515,200 +883,6 @@
       <tags>
         <tag>Leetcode</tag>
         <tag>数组</tag>
-      </tags>
-  </entry>
-  <entry>
-    <title>Parameter Efficient Fine-Tuning(PEFT)系列论文总结(二)</title>
-    <url>/2023/12/27/Parameter%20Efficient%20Fine-Tuning(PEFT)%E7%B3%BB%E5%88%97%E8%AE%BA%E6%96%87%E6%80%BB%E7%BB%93(%E4%BA%8C)/</url>
-    <content><![CDATA[<p>承接上篇Parameter Efficient Fine-Tuning(PEFT)系列论文总结(一)，本篇主要介绍P-Tuning系列的微调方法。</p>
-<span id="more"></span>
-
-<h2 id="一、P-Tuning-v1"><a href="#一、P-Tuning-v1" class="headerlink" title="一、P-Tuning v1"></a>一、P-Tuning v1</h2><p>清华大学的研究者于2021年3月通过此篇论文《<a href="https://arxiv.org/pdf/2103.10385">GPT Understands, Too</a>》提出<code>P-Tuning</code></p>
-<p>文章的提出为了解决这样一个问题，如下图给出：</p>
-<p>大模型的<code>Prompt</code>构造方式严重影响下游任务的效果。比如：<code>GPT-3</code>采用人工构造的模版来做上下文学习<code>(in-context learning)</code>，但人工设计的模版的变化特别敏感，加一个词或者少一个词，或者变动位置都会造成比较大的变化。</p>
-<img src="/2023/12/27/Parameter%20Efficient%20Fine-Tuning(PEFT)%E7%B3%BB%E5%88%97%E8%AE%BA%E6%96%87%E6%80%BB%E7%BB%93(%E4%BA%8C)/image-20240106145327787.png" alt="image-20240106145327787" style="zoom: 67%;">
-
-<p>之前的工作都是这种离散化的<code>token</code>，搜索出来的结果可能并不是最优的，导致性能不稳定。</p>
-<p>![image-20240106153147765](Parameter Efficient Fine-Tuning(PEFT)系列论文总结(二)&#x2F;image-20240106153147765.png)</p>
-<p>基于此，作者提出了<code>P-Tuning</code>，设计了一种连续可微的<code>virtual token</code>（类似<code>Prefix-Tuning</code>）。<code>P-Tuning</code>成功地实现了模版的自动构建，且借助<code>P-tuning</code>，<code>GPT</code>在<code>SuperGLUE</code>上的成绩首次超过了同等级别的<code>BERT</code>模型，这颠覆了在那年之前“<code>GPT</code>不擅长<code>NLU</code>”的结论，也是该论文命名的缘由</p>
-<img src="/2023/12/27/Parameter%20Efficient%20Fine-Tuning(PEFT)%E7%B3%BB%E5%88%97%E8%AE%BA%E6%96%87%E6%80%BB%E7%BB%93(%E4%BA%8C)/image-20240106150023656.png" alt="image-20240106150023656" style="zoom:80%;">
-
-<p><strong>对于上面可微的理解：</strong></p>
-<p>原文是<code>continuous</code>连续，这里可微就是可导，应该是反向传播的时候要求导数，所以可以BP优化学习&#x3D;可微。</p>
-<p><strong>P-tuning和Prefix Tuning类似</strong>，也放弃了“模版由自然语言构成”这一常规要求，从而将模版的构建转化为连续参数优化问题</p>
-<p>下图是一个<code>prompt search</code>针对<code>The capital of Britain is [MASK]</code>(英国的首都是哪个城市)的例子<br>即给定上下文(蓝色区域，“英国”)和目标(红色区域，“[MASK]”)，橙色区域指的是提示符号<code>prompt tokens</code></p>
-<img src="/2023/12/27/Parameter%20Efficient%20Fine-Tuning(PEFT)%E7%B3%BB%E5%88%97%E8%AE%BA%E6%96%87%E6%80%BB%E7%BB%93(%E4%BA%8C)/image-20240107104210128.png" alt="image-20240107104210128" style="zoom:80%;">
-
-<ul>
-<li><p>在(a)中，提示生成器只收到离散的奖励<br><em>In (a), the prompt generator only receives discrete rewards</em></p>
-</li>
-<li><p>在(b)中，伪<code>prompt</code>和<code>prompt encoder</code>可以以可微的方式进行优化，有时，在(b)中添加少量与任务相关的<code>anchor tokens</code>(如<code>capital</code>)将带来进一步的改进<br><em>in (b) the pseudo prompts and prompt encoder can be optimized in a differentiable way. Sometimes, adding few task-related anchor tokens(such as “capital” in (b)) will bring further improvement</em></p>
-<p>(<code>ps</code>：经过预训练的LM的词嵌入已经变得高度离散，如果随机初始化<code>virtual token</code>，容易优化到局部最优值，而这些<code>virtual token</code>理论是应该有关联的。因此，作者通过实验发现用一个<code>prompt encoder</code>来编码会收敛更快，效果更好。即用一个<code>LSTM+MLP</code>去编码这些<code>virtual token</code>以后，再输入到模型)</p>
-</li>
-</ul>
-<p>换言之，<code>P-tuning</code>做法是用一些伪<code>prompt</code>代替这些显式的<code>prompt</code>(说白了，将自然语言提示的<code>token</code>，替换为可训练的嵌入)<br>具体的做法是可以用预训练词表中的<code>unused token</code>作为伪<code>prompt</code>「<code>BERT</code>的<code>vocab</code>里有<code>unused 1 ~ unused99</code>，就是为了方便增加词汇的」，然后通过训练去更新这些<code>token</code>的参数<br>也就是，<code>P-tuning</code>的<code> Prompt</code>不是显式的，不是我们可以看得懂的字符，而是一些隐式的、经过训练的、模型认为最好的<code>prompt token</code></p>
-<p><strong>Prefix Tuning和P-Tuning v1的区别：</strong></p>
-<p>1、<code>prefix tuning</code>在所有<code>transformer layer</code>都加入了<code>prompt</code>，而<code>P-Tuning</code>只在输入层加</p>
-<p>2、<code>P-Tuning</code>的<code>virtual token</code>的位置也不一定是前缀，插入的位置是可选的</p>
-<p>3、作者是用一个<code>prompt encoder</code>来编码收敛更快，效果更好。也就是说，用一个<code>LSTM+MLP</code>去编码这些<code>virtual token</code>以后，再输入到模型</p>
-<p>苏剑林说：“在P-Tuning中，如果我们不将新插入的token视为“模版”，是将它视为模型的一部分，那么实际上P-Tuning也是一种类似Adapter的做法，同样是固定原模型的权重，然后插入一些新的可优化参数，同样是只优化这些新参数，只不过这时候新参数插入的是Embedding层，因此，从这个角度看，P-Tuning与Adapter有颇多异曲同工之处”</p>
-<h2 id="二、P-Tuning-v2"><a href="#二、P-Tuning-v2" class="headerlink" title="二、P-Tuning v2"></a>二、P-Tuning v2</h2><p>之前的<code>Prompt Tuning</code>和<code>P-Tuning</code>等方法存在两个主要的问题：</p>
-<p>第一，缺乏模型参数规模和任务通用性。</p>
-<ul>
-<li>缺乏规模通用性：<code>Prompt Tuning</code>论文中表明当模型规模超过100亿个参数时，提示优化可以与全量微调相媲美。但是对于那些较小的模型（从100M到1B），提示优化和全量微调的表现有很大差异，这大大限制了提示优化的适用性。</li>
-<li>缺乏任务普遍性：尽管<code>Prompt Tuning</code>和<code>P-tuning</code>在一些 <code>NLU </code>基准测试中表现出优势，但提示调优对硬序列标记任务（即序列标注）的有效性尚未得到验证。</li>
-</ul>
-<p>第二，缺少深度提示优化，在<code>Prompt Tuning</code>和<code>P-tuning</code>中，连续提示只被插入<code>transformer</code>第一层的输入<code>embedding</code>序列中，在接下来的<code>transformer</code>层中，插入连续提示的位置的<code>embedding</code>是由之前的<code>transformer</code>层计算出来的，这可能导致两个可能的优化挑战：</p>
-<ul>
-<li>由于序列长度的限制，可调参数的数量是有限的</li>
-<li>输入<code>embedding</code>对模型预测只有相对间接的影响</li>
-</ul>
-<p>考虑到这些问题，作者提出了<code>P-Tuning v2</code>，它利用深度提示优化（如：<code>Prefix Tuning</code>），对<code>Prompt Tuning</code>和<code>P-Tuning</code>进行改进，作为一个跨规模和<code>NLU</code>任务的通用解决方案</p>
-<p><code>P-Tuning v2</code>（论文： <strong>P-Tuning v2: Prompt Tuning Can Be Comparable to Fine-tuning Universally Across Scales and Tasks</strong>），该方法在<strong>每一层</strong>都加入了<code>Prompts tokens</code>作为输入，而不是仅仅加在输入层，这带来两个方面的好处：</p>
-<ul>
-<li>更多可学习的参数（从<code>P-Tuning</code>和<code>Prompt Tuning</code>的0.01%增加到0.1%-3%），同时也足够参数高效。</li>
-<li>加入到更深层结构中的<code>Promp</code>能给模型预测带来更直接的影响</li>
-</ul>
-<img src="/2023/12/27/Parameter%20Efficient%20Fine-Tuning(PEFT)%E7%B3%BB%E5%88%97%E8%AE%BA%E6%96%87%E6%80%BB%E7%BB%93(%E4%BA%8C)/image-20240107135447839.png" alt="image-20240107135447839" style="zoom:80%;">
-
-<p>具体做法基本同<code>Prefix Tuning</code>，可以看作是将<strong>文本生成</strong>的<code>Prefix Tuning</code>技术适配到<code>NLU</code>任务中，然后做了一些改进：</p>
-<ul>
-<li><strong>移除重参数化的编码器</strong>。以前的方法利用重参数化功能来提高训练速度和鲁棒性（如：<code>Prefix Tuning</code>中的<code>MLP</code>、<code>P-Tuning</code>中的<code>LSTM</code>））。在 <code>P-Tuning v2</code> 中，作者发现重参数化的改进很小，尤其是对于较小的模型，同时还会影响模型的表现。</li>
-<li><strong>针对不同任务采用不同的提示长度</strong>。提示长度在提示优化方法的超参数搜索中起着核心作用。在实验中，我们发现不同的理解任务通常用不同的提示长度来实现其最佳性能，这与<code>Prefix-Tuning</code>中的发现一致，不同的文本生成任务可能有不同的最佳提示长度。</li>
-<li><strong>引入多任务学习</strong>。先在多任务的<code>Prompt</code>上进行预训练，然后再适配下游任务。多任务学习对我们的方法来说是可选的，但可能是相当有帮助的。一方面，连续提示的随机惯性给优化带来了困难，这可以通过更多的训练数据或与任务相关的无监督预训练来缓解；另一方面，连续提示是跨任务和数据集的特定任务知识的完美载体。我们的实验表明，在一些困难的序列任务中，多任务学习可以作为<code>P-Tuning v2</code>的有益补充。</li>
-<li><strong>回归传统的分类标签范式，而不是映射器</strong>。标签词映射器（Label Word Verbalizer）一直是提示优化的核心组成部分，它将<code>one-hot</code>类标签变成有意义的词，以利用预训练语言模型头。尽管它在<code>few-shot</code>设置中具有潜在的必要性，但在全数据监督设置中，<code>Verbalizer</code>并不是必须的。它阻碍了提示调优在我们需要无实际意义的标签和句子嵌入的场景中的应用。因此，<code>P-Tuning v2</code>回归传统的<code>CLS</code>标签分类范式，采用随机初始化的分类头（Classification Head）应用于<code>tokens</code>之上，以增强通用性，可以适配到序列标注任务。</li>
-</ul>
-]]></content>
-      <categories>
-        <category>论文</category>
-      </categories>
-      <tags>
-        <tag>PEFT</tag>
-      </tags>
-  </entry>
-  <entry>
-    <title>Transformers</title>
-    <url>/2023/11/19/Transformers/</url>
-    <content><![CDATA[<h1 id="Transformers理解"><a href="#Transformers理解" class="headerlink" title="Transformers理解"></a>Transformers理解</h1><h2 id="1、模型结构概览"><a href="#1、模型结构概览" class="headerlink" title="1、模型结构概览"></a>1、模型结构概览</h2><p><strong>大致结构图：</strong></p>
-<p><img src="/2023/11/19/Transformers/transformer3.png" alt="img"></p>
-<p><strong>细致结构图：</strong></p>
-<p><img src="/2023/11/19/Transformers/transformer.jpg" alt="img"></p>
-<figure class="highlight txt"><table><tr><td class="code"><pre><span class="line">模型大致分为Encoder(编码器)和Decoder(解码器)两个部分，分别对应上图中的左右两部分。</span><br><span class="line">其中编码器由N个相同的层堆叠在一起(原论文取N=6)，每一层又有两个子层</span><br><span class="line"></span><br><span class="line">第一个子层是一个Multi-Head Attention(多头的自注意机制)</span><br><span class="line">第二个子层是一个简单的Feed Forward(全连接前馈网络)</span><br><span class="line">两个子层都添加了一个残差连接+layer normalization的操作</span><br><span class="line"></span><br><span class="line">模型的解码器同样是堆叠了N个相同的层，不过和编码器中每层的结构稍有不同。</span><br><span class="line">对于解码器的每一层，除了编码器中的两个子层Multi-Head Attention和Feed Forward，解码器还包含一个子层Masked Multi-Head Attention，如图中所示每个子层同样也用了residual以及layer normalization</span><br><span class="line"></span><br><span class="line">模型的输入由Input Embedding和Positional Encoding(位置编码)两部分组合而成(直接对位相加)</span><br><span class="line">模型的输出由Decoder的输出简单的经过softmax得到</span><br><span class="line"></span><br><span class="line">结合上图对Transformer模型的结构做了个大致的梳理，下面对提及的每个模块进行详细介绍</span><br></pre></td></tr></table></figure>
-
-<h2 id="2、模型的输入部分"><a href="#2、模型的输入部分" class="headerlink" title="2、模型的输入部分"></a>2、模型的输入部分</h2><figure class="highlight txt"><table><tr><td class="code"><pre><span class="line">输入部分包含两个模块</span><br><span class="line">Embedding 和 Positional Encoding</span><br></pre></td></tr></table></figure>
-
-<h3 id="2-1-Eebedding层"><a href="#2-1-Eebedding层" class="headerlink" title="2.1 Eebedding层"></a>2.1 Eebedding层</h3><figure class="highlight txt"><table><tr><td class="code"><pre><span class="line">Embedding层的作用是将某种格式的输入数据，例如文本</span><br><span class="line">转变为模型可以处理的向量表示，来描述原始数据所包含的信息。</span><br><span class="line"></span><br><span class="line">Embedding层输出的可以理解为当前时间步的特征，如果是文本任务，这里就可以是Word Embedding</span><br><span class="line">如果是其他任务，就可以是任何合理方法所提取的特征。</span><br><span class="line"></span><br><span class="line">构建Embedding层的代码的核心是借助torch提供的nn.Embedding，如下：</span><br></pre></td></tr></table></figure>
-
-<figure class="highlight python"><table><tr><td class="code"><pre><span class="line"><span class="keyword">class</span> <span class="title class_">Embeddings</span>(nn.Module):</span><br><span class="line">    <span class="keyword">def</span> <span class="title function_">__init__</span>(<span class="params">self, d_model, vocab</span>):</span><br><span class="line">        <span class="string">&quot;&quot;&quot;</span></span><br><span class="line"><span class="string">        类的初始化函数</span></span><br><span class="line"><span class="string">        d_model：指词嵌入的维度</span></span><br><span class="line"><span class="string">        vocab:指词表的大小                           </span></span><br><span class="line"><span class="string">        &quot;&quot;&quot;</span></span><br><span class="line">        <span class="built_in">super</span>(Embeddings, self).__init__()</span><br><span class="line">        <span class="comment">#之后就是调用nn中的预定义层Embedding，获得一个词嵌入对象self.lut</span></span><br><span class="line">        self.lut = nn.Embedding(vocab, d_model)</span><br><span class="line">        <span class="comment">#最后就是将d_model传入类中</span></span><br><span class="line">        self.d_model =d_model</span><br><span class="line">    <span class="keyword">def</span> <span class="title function_">forward</span>(<span class="params">self, x</span>):</span><br><span class="line">        <span class="string">&quot;&quot;&quot;</span></span><br><span class="line"><span class="string">        Embedding层的前向传播逻辑</span></span><br><span class="line"><span class="string">        参数x：这里代表输入给模型的单词文本通过词表映射后的one-hot向量</span></span><br><span class="line"><span class="string">        将x传给self.lut并与根号下self.d_model相乘作为结果返回</span></span><br><span class="line"><span class="string">        &quot;&quot;&quot;</span></span><br><span class="line">        embedds = self.lut(x)</span><br><span class="line">        <span class="keyword">return</span> embedds * math.sqrt(self.d_model)</span><br></pre></td></tr></table></figure>
-
-<figure class="highlight txt"><table><tr><td class="code"><pre><span class="line">self.lut(x) 的操作实际上是在权重矩阵中查找与 x 中的每个整数索引相对应的行</span><br><span class="line">每个整数索引对应于权重矩阵中的一行，该行包含了对应的词嵌入向量</span><br></pre></td></tr></table></figure>
-
-
-
-<h3 id="2-2-位置编码"><a href="#2-2-位置编码" class="headerlink" title="2.2 位置编码"></a>2.2 位置编码</h3><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">Positional Encodding位置编码的作用是为模型提供当前时间步的前后出现顺序的信息</span><br><span class="line">因为Transformer不像RNN那样的循环结构有前后不同时间步输入间天然的先后顺序</span><br><span class="line">所有的时间步是同时输入，并行推理的，因此在时间步的特征中融合进位置编码的信息是合理的。</span><br><span class="line"></span><br><span class="line">位置编码可以有很多选择，可以是固定的，也可以设置成可学习的参数。</span><br></pre></td></tr></table></figure>
-
-<figure class="highlight txt"><table><tr><td class="code"><pre><span class="line">原论文中使用固定的位置编码。具体地，使用不同频率的sin和cos函数来进行位置编码，如下所示：</span><br></pre></td></tr></table></figure>
-
-<p><img src="/2023/11/19/Transformers/image-20231107193737530.png" alt="image-20231107193737530"></p>
-<figure class="highlight txt"><table><tr><td class="code"><pre><span class="line">其中pos代表单词位置，向量PE(pos)就是该单词对应的位置编码</span><br><span class="line">编码长度同Embedding层，这里设置的是512</span><br><span class="line">上面有两个公式，代表着位置编码向量中的元素，奇数位置和偶数位置使用两个不同的公式</span><br></pre></td></tr></table></figure>
-
-<p>​                  <img src="/2023/11/19/Transformers/image-20231107195151986.png" alt="image-20231107195151986">                                                                                                                                         </p>
-<p><strong>下面是位置编码模块的代码实现：</strong></p>
-<figure class="highlight python"><table><tr><td class="code"><pre><span class="line"><span class="keyword">class</span> <span class="title class_">PositionalEncoding</span>(nn.Module):</span><br><span class="line">    <span class="keyword">def</span> <span class="title function_">__init__</span>(<span class="params">self, d_model, dropout, max_len=<span class="number">5000</span></span>):</span><br><span class="line">        <span class="string">&quot;&quot;&quot;</span></span><br><span class="line"><span class="string">        位置编码器类的初始化函数</span></span><br><span class="line"><span class="string">        </span></span><br><span class="line"><span class="string">        共有三个参数，分别是</span></span><br><span class="line"><span class="string">        d_model：词嵌入维度</span></span><br><span class="line"><span class="string">        dropout: dropout触发比率</span></span><br><span class="line"><span class="string">        max_len：每个句子的最大长度</span></span><br><span class="line"><span class="string">        &quot;&quot;&quot;</span></span><br><span class="line">        <span class="built_in">super</span>(PositionalEncoding, self).__init__()</span><br><span class="line">        self.dropout = nn.Dropout(p=dropout)</span><br><span class="line">        </span><br><span class="line">        <span class="comment"># Compute the positional encodings</span></span><br><span class="line">        <span class="comment"># 注意下面代码的计算方式与公式中给出的是不同的，但是是等价的，你可以尝试简单推导证明一下。</span></span><br><span class="line">        <span class="comment"># 这样计算是为了避免中间的数值计算结果超出float的范围，</span></span><br><span class="line">        pe = torch.zeros(max_len, d_model)</span><br><span class="line">        position = torch.arange(<span class="number">0</span>, max_len).unsqueeze(<span class="number">1</span>)                                                                                                                                                                                   </span><br><span class="line">        div_term = torch.exp(torch.arange(<span class="number">0</span>, d_model, <span class="number">2</span>) *</span><br><span class="line">                             -(math.log(<span class="number">10000.0</span>) / d_model))</span><br><span class="line">        pe[:, <span class="number">0</span>::<span class="number">2</span>] = torch.sin(position * div_term)</span><br><span class="line">        pe[:, <span class="number">1</span>::<span class="number">2</span>] = torch.cos(position * div_term)</span><br><span class="line">        pe = pe.unsqueeze(<span class="number">0</span>)</span><br><span class="line">        self.register_buffer(<span class="string">&#x27;pe&#x27;</span>, pe)</span><br><span class="line">        </span><br><span class="line">    <span class="keyword">def</span> <span class="title function_">forward</span>(<span class="params">self, x</span>):</span><br><span class="line">        x = x + Variable(self.pe[:, :x.size(<span class="number">1</span>)], requires_grad=<span class="literal">False</span>)</span><br><span class="line">        <span class="keyword">return</span> self.dropout(x)</span><br></pre></td></tr></table></figure>
-
-<figure class="highlight txt"><table><tr><td class="code"><pre><span class="line">因此，可以认为，最终模型的输入是若干个时间步对应的embedding，每一个时间步对应一个embedding</span><br><span class="line">可以理解为是当前时间步的一个综合的特征信息</span><br><span class="line">即包含了本身的语义信息，又包含了当前时间步在整个句子中的位置信息</span><br></pre></td></tr></table></figure>
-
-<h3 id="2-3-Encoder-和-Decoder-包含的输入模块"><a href="#2-3-Encoder-和-Decoder-包含的输入模块" class="headerlink" title="2.3 Encoder 和 Decoder 包含的输入模块"></a>2.3 Encoder 和 Decoder 包含的输入模块</h3><figure class="highlight txt"><table><tr><td class="code"><pre><span class="line">两部分的输入的结构是相同的，只是推理时的用法不同</span><br><span class="line">编码器只推理一次，而解码器是类似RNN那样循环推理，不断生成预测结果的</span><br></pre></td></tr></table></figure>
-
-<p><img src="/2023/11/19/Transformers/image-20231107203101696.png" alt="image-20231107203101696"></p>
-<figure class="highlight txt"><table><tr><td class="code"><pre><span class="line">怎么理解？假设现在做的是一个法语-英语的机器翻译任务</span><br><span class="line">想把`Je suis étudiant`翻译为`I am a student`。</span><br><span class="line"></span><br><span class="line">那么我们输入给编码器的就是时间步数为3的embedding数组</span><br><span class="line">编码器只进行一次并行推理，即获得了对于输入的法语句子所提取的若干特征信息。</span><br><span class="line"></span><br><span class="line">而对于解码器，是循环推理，逐个单词生成结果的</span><br><span class="line">最开始，由于什么都还没预测，我们会将编码器提取的特征，以及一个句子起始符传给解码器</span><br><span class="line">解码器预期会输出一个单词`I`。然后有了预测的第一个单词</span><br><span class="line">我们就将`I`输入给解码器，会再预测出下一个单词`am`，</span><br><span class="line">再然后我们将`I am`作为输入喂给解码器</span><br><span class="line">以此类推直到预测出句子终止符完成预测</span><br></pre></td></tr></table></figure>
-
-<h2 id="3、Encoder编码器"><a href="#3、Encoder编码器" class="headerlink" title="3、Encoder编码器"></a>3、Encoder编码器</h2><h3 id="3-1-Encoder"><a href="#3-1-Encoder" class="headerlink" title="3.1 Encoder"></a>3.1 Encoder</h3><figure class="highlight txt"><table><tr><td class="code"><pre><span class="line">编码器作用是用于对输入进行特征提取，为解码环节提供有效的语义信息</span><br><span class="line"></span><br><span class="line">整体来看编码器由N个编码器层简单堆叠而成，因此实现非常简单，代码如下</span><br></pre></td></tr></table></figure>
-
-<figure class="highlight python"><table><tr><td class="code"><pre><span class="line"><span class="comment"># 定义一个clones函数，来更方便的将某个结构复制若干份</span></span><br><span class="line"><span class="keyword">def</span> <span class="title function_">clones</span>(<span class="params">module, N</span>):</span><br><span class="line">    <span class="string">&quot;Produce N identical layers.&quot;</span></span><br><span class="line">    <span class="keyword">return</span> nn.ModuleList([copy.deepcopy(module) <span class="keyword">for</span> _ <span class="keyword">in</span> <span class="built_in">range</span>(N)])</span><br><span class="line"></span><br><span class="line"></span><br><span class="line"><span class="keyword">class</span> <span class="title class_">Encoder</span>(nn.Module):</span><br><span class="line">    <span class="string">&quot;&quot;&quot;</span></span><br><span class="line"><span class="string">    Encoder</span></span><br><span class="line"><span class="string">    The encoder is composed of a stack of N=6 identical layers.</span></span><br><span class="line"><span class="string">    &quot;&quot;&quot;</span></span><br><span class="line">    <span class="keyword">def</span> <span class="title function_">__init__</span>(<span class="params">self, layer, N</span>):</span><br><span class="line">        <span class="built_in">super</span>(Encoder, self).__init__()</span><br><span class="line">        <span class="comment"># 调用时会将编码器层传进来，我们简单克隆N分，叠加在一起，组成完整的Encoder</span></span><br><span class="line">        self.layers = clones(layer, N)</span><br><span class="line">        self.norm = LayerNorm(layer.size)</span><br><span class="line">        </span><br><span class="line">    <span class="keyword">def</span> <span class="title function_">forward</span>(<span class="params">self, x, mask</span>):</span><br><span class="line">        <span class="string">&quot;Pass the input (and mask) through each layer in turn.&quot;</span></span><br><span class="line">        <span class="keyword">for</span> layer <span class="keyword">in</span> self.layers:</span><br><span class="line">            x = layer(x, mask)</span><br><span class="line">        <span class="keyword">return</span> self.norm(x)</span><br></pre></td></tr></table></figure>
-
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">mask放到后面会讲解</span><br></pre></td></tr></table></figure>
-
-<h3 id="3-2-EncoderLayer"><a href="#3-2-EncoderLayer" class="headerlink" title="3.2 EncoderLayer"></a>3.2 EncoderLayer</h3><figure class="highlight txt"><table><tr><td class="code"><pre><span class="line">每个编码器层由两个子层连接结构组成：</span><br><span class="line"></span><br><span class="line">第一个子层包括一个多头自注意力层和层归一化以及一个残差连接；</span><br><span class="line"></span><br><span class="line">第二个子层包括一个前馈全连接层和层归一化以及一个残差连接；</span><br></pre></td></tr></table></figure>
-
-<p><img src="/2023/11/19/Transformers/image-20231107203952596.png" alt="image-20231107203952596"></p>
-<p><strong>先定义一个SubLayerConnection类来描述这种结构关系</strong></p>
-<figure class="highlight python"><table><tr><td class="code"><pre><span class="line"><span class="keyword">class</span> <span class="title class_">SublayerConnection</span>(nn.Module):</span><br><span class="line">    <span class="string">&quot;&quot;&quot; </span></span><br><span class="line"><span class="string">    实现子层连接结构的类</span></span><br><span class="line"><span class="string">    &quot;&quot;&quot;</span></span><br><span class="line">    <span class="keyword">def</span> <span class="title function_">__init__</span>(<span class="params">self, size, dropout</span>):</span><br><span class="line">        <span class="built_in">super</span>(SublayerConnection, self).__init__()</span><br><span class="line">        self.norm = LayerNorm(size)</span><br><span class="line">        self.dropout = nn.Dropout(dropout)</span><br><span class="line"></span><br><span class="line">    <span class="keyword">def</span> <span class="title function_">forward</span>(<span class="params">self, x, sublayer</span>):</span><br><span class="line"></span><br><span class="line">        <span class="comment"># 原paper的方案</span></span><br><span class="line">        <span class="comment">#sublayer_out = sublayer(x)</span></span><br><span class="line">        <span class="comment">#x_norm = self.norm(x + self.dropout(sublayer_out))</span></span><br><span class="line"></span><br><span class="line">        <span class="comment"># 稍加调整的版本</span></span><br><span class="line">        sublayer_out = sublayer(x)</span><br><span class="line">        sublayer_out = self.dropout(sublayer_out)</span><br><span class="line">        x_norm = x + self.norm(sublayer_out)</span><br><span class="line">        <span class="keyword">return</span> x_norm</span><br></pre></td></tr></table></figure>
-
-<p><strong>定义好了SubLayerConnection，就可以实现EncoderLayer的结构了</strong></p>
-<figure class="highlight python"><table><tr><td class="code"><pre><span class="line"><span class="keyword">class</span> <span class="title class_">EncoderLayer</span>(nn.Module):</span><br><span class="line">    <span class="string">&quot;EncoderLayer is made up of two sublayer: self-attn and feed forward&quot;</span>                                                                                                         </span><br><span class="line">    <span class="keyword">def</span> <span class="title function_">__init__</span>(<span class="params">self, size, self_attn, feed_forward, dropout</span>):</span><br><span class="line">        <span class="built_in">super</span>(EncoderLayer, self).__init__()</span><br><span class="line">        self.self_attn = self_attn</span><br><span class="line">        self.feed_forward = feed_forward</span><br><span class="line">        self.sublayer = clones(SublayerConnection(size, dropout), <span class="number">2</span>)</span><br><span class="line">        self.size = size   <span class="comment"># embedding&#x27;s dimention of model, 默认512</span></span><br><span class="line"></span><br><span class="line">    <span class="keyword">def</span> <span class="title function_">forward</span>(<span class="params">self, x, mask</span>):</span><br><span class="line">        <span class="comment"># attention sub layer</span></span><br><span class="line">        x = self.sublayer[<span class="number">0</span>](x, <span class="keyword">lambda</span> x: self.self_attn(x, x, x, mask))</span><br><span class="line">        <span class="comment"># feed forward sub layer</span></span><br><span class="line">        z = self.sublayer[<span class="number">1</span>](x, self.feed_forward)</span><br><span class="line">        <span class="keyword">return</span> z</span><br></pre></td></tr></table></figure>
-
-<p><strong>继续往下拆解，需要了解 attention层 和 feed_forward层的结构以及如何实现</strong></p>
-<h3 id="3-3-Atention"><a href="#3-3-Atention" class="headerlink" title="3.3 Atention"></a>3.3 Atention</h3><p><img src="/2023/11/19/Transformers/image-20231108132102982.png" alt="image-20231108132102982"></p>
-<figure class="highlight txt"><table><tr><td class="code"><pre><span class="line">为什么叫Self - Attention呢?</span><br><span class="line">假设我们在执行机器翻译任务, 这个Attention不再是作用于我们给出的一种语言的输入Source和目标语言的输出Target, 而是作用于Source和Source内部, 即源语言的语义编码与原始输入Source之间的Attention, 这样能够获得单词在句子中更好的表示</span><br></pre></td></tr></table></figure>
-
-<p><img src="/2023/11/19/Transformers/image-20231108132854314.png" alt="image-20231108132854314"></p>
-<p><img src="/2023/11/19/Transformers/image-20231108132945867.png" alt="image-20231108132945867"></p>
-<p><img src="/2023/11/19/Transformers/image-20231108132838428.png" alt="image-20231108132838428"></p>
-<p><img src="/2023/11/19/Transformers/scaledotattention.jpg" alt="img"></p>
-<p><img src="/2023/11/19/Transformers/image-20231108133243393.png" alt="image-20231108133243393"></p>
-<p><img src="/2023/11/19/Transformers/transformer10.png" alt="img"></p>
-<p><img src="/2023/11/19/Transformers/image-20231108133713377.png" alt="image-20231108133713377"></p>
-<p><img src="/2023/11/19/Transformers/transformer11.png" alt="img"></p>
-<p><strong>综上, 将自注意力总结为:</strong></p>
-<p><img src="/2023/11/19/Transformers/image-20231108133742066.png" alt="image-20231108133742066"></p>
-<p><img src="/2023/11/19/Transformers/image-20231108133748987.png" alt="image-20231108133748987"></p>
-<p><img src="/2023/11/19/Transformers/image-20231108190530270.png" alt="image-20231108190530270"></p>
-<p><img src="/2023/11/19/Transformers/image-20231108190539290.png" alt="image-20231108190539290"></p>
-<p><strong>下面是注意力模块的实现代码</strong></p>
-<figure class="highlight python"><table><tr><td class="code"><pre><span class="line"><span class="keyword">def</span> <span class="title function_">attention</span>(<span class="params">query, key, value, mask=<span class="literal">None</span>, dropout=<span class="literal">None</span></span>):</span><br><span class="line">    <span class="string">&quot;Compute &#x27;Scaled Dot Product Attention&#x27;&quot;</span></span><br><span class="line"></span><br><span class="line">    <span class="comment">#首先取query的最后一维的大小，对应词嵌入维度</span></span><br><span class="line">    d_k = query.size(-<span class="number">1</span>)</span><br><span class="line">    <span class="comment">#按照注意力公式，将query与key的转置相乘，这里面key是将最后两个维度进行转置，再除以缩放系数得到注意力得分张量scores</span></span><br><span class="line">    scores = torch.matmul(query, key.transpose(-<span class="number">2</span>, -<span class="number">1</span>)) / math.sqrt(d_k)</span><br><span class="line">    </span><br><span class="line">    <span class="comment">#接着判断是否使用掩码张量</span></span><br><span class="line">    <span class="keyword">if</span> mask <span class="keyword">is</span> <span class="keyword">not</span> <span class="literal">None</span>:</span><br><span class="line">        <span class="comment">#使用tensor的masked_fill方法，将掩码张量和scores张量每个位置一一比较，如果掩码张量则对应的scores张量用-1e9这个置来替换</span></span><br><span class="line">        scores = scores.masked_fill(mask == <span class="number">0</span>, -<span class="number">1e9</span>)</span><br><span class="line">        </span><br><span class="line">    <span class="comment">#对scores的最后一维进行softmax操作，使用F.softmax方法，这样获得最终的注意力张量</span></span><br><span class="line">    p_attn = F.softmax(scores, dim = -<span class="number">1</span>)</span><br><span class="line">    </span><br><span class="line">    <span class="comment">#之后判断是否使用dropout进行随机置0</span></span><br><span class="line">    <span class="keyword">if</span> dropout <span class="keyword">is</span> <span class="keyword">not</span> <span class="literal">None</span>:</span><br><span class="line">        p_attn = dropout(p_attn)</span><br><span class="line">    </span><br><span class="line">    <span class="comment">#最后，根据公式将p_attn与value张量相乘获得最终的query注意力表示，同时返回注意力张量</span></span><br><span class="line">    <span class="keyword">return</span> torch.matmul(p_attn, value), p_attn</span><br></pre></td></tr></table></figure>
-
-
-
-<h3 id="3-4-MultiHead-Attention"><a href="#3-4-MultiHead-Attention" class="headerlink" title="3.4 MultiHead-Attention"></a><strong>3.4 MultiHead-Attention</strong></h3><figure class="highlight txt"><table><tr><td class="code"><pre><span class="line">Multi - head Attention的思路和CNN中的多个卷积核起到的作用明显是一致的</span><br><span class="line">所谓”多头”, 放在卷积神经网络里就是卷积层多个卷积核的特征提取过程</span><br><span class="line">在这里就是进行多次注意力的提取, 就像多个卷积核一样</span><br><span class="line">多次不同的初始化矩阵经过训练可能会有多种不同的特征, 更有利于不同角度的特征抽取和信息提取.</span><br></pre></td></tr></table></figure>
-
-<p><img src="/2023/11/19/Transformers/image-20231108190908781.png" alt="image-20231108190908781"></p>
-<p><strong>论文中采用了8个头的注意力, 即ℎ&#x3D;8, 得到多个提取出来的特征:</strong></p>
-<p><img src="/2023/11/19/Transformers/image-20231108191039102.png" alt="image-20231108191039102"></p>
-<p><img src="/2023/11/19/Transformers/image-20231108191052626.png" alt="image-20231108191052626"></p>
-<p><strong>下面是多头注意力模块的实现代码</strong></p>
-<figure class="highlight python"><table><tr><td class="code"><pre><span class="line"><span class="keyword">class</span> <span class="title class_">MultiHeadedAttention</span>(nn.Module):</span><br><span class="line">    <span class="keyword">def</span> <span class="title function_">__init__</span>(<span class="params">self, h, d_model, dropout=<span class="number">0.1</span></span>):</span><br><span class="line">        <span class="comment">#在类的初始化时，会传入三个参数，h代表头数，d_model代表词嵌入的维度，dropout代表进行dropout操作时置0比率，默认是0.1</span></span><br><span class="line">        <span class="built_in">super</span>(MultiHeadedAttention, self).__init__()</span><br><span class="line">        <span class="comment">#在函数中，首先使用了一个测试中常用的assert语句，判断h是否能被d_model整除，这是因为我们之后要给每个头分配等量的词特征，也就是embedding_dim/head个</span></span><br><span class="line">        <span class="keyword">assert</span> d_model % h == <span class="number">0</span></span><br><span class="line">        <span class="comment">#得到每个头获得的分割词向量维度d_k</span></span><br><span class="line">        self.d_k = d_model // h</span><br><span class="line">        <span class="comment">#传入头数h</span></span><br><span class="line">        self.h = h</span><br><span class="line">        </span><br><span class="line">        <span class="comment">#创建linear层，通过nn的Linear实例化，它的内部变换矩阵是embedding_dim x embedding_dim，然后使用，为什么是四个呢，这是因为在多头注意力中，Q,K,V各需要一个，最后拼接的矩阵还需要一个，因此一共是四个</span></span><br><span class="line">        self.linears = clones(nn.Linear(d_model, d_model), <span class="number">4</span>)</span><br><span class="line">        <span class="comment">#self.attn为None，它代表最后得到的注意力张量，现在还没有结果所以为None</span></span><br><span class="line">        self.attn = <span class="literal">None</span></span><br><span class="line">        self.dropout = nn.Dropout(p=dropout)</span><br><span class="line">        </span><br><span class="line">    <span class="keyword">def</span> <span class="title function_">forward</span>(<span class="params">self, query, key, value, mask=<span class="literal">None</span></span>):</span><br><span class="line">        <span class="comment">#前向逻辑函数，它输入参数有四个，前三个就是注意力机制需要的Q,K,V，最后一个是注意力机制中可能需要的mask掩码张量，默认是None</span></span><br><span class="line">        <span class="keyword">if</span> mask <span class="keyword">is</span> <span class="keyword">not</span> <span class="literal">None</span>:</span><br><span class="line">            <span class="comment"># Same mask applied to all h heads.</span></span><br><span class="line">            <span class="comment">#使用unsqueeze扩展维度，代表多头中的第n头</span></span><br><span class="line">            mask = mask.unsqueeze(<span class="number">1</span>)</span><br><span class="line">        <span class="comment">#接着，我们获得一个batch_size的变量，他是query尺寸的第1个数字，代表有多少条样本</span></span><br><span class="line">        nbatches = query.size(<span class="number">0</span>)</span><br><span class="line">        </span><br><span class="line">        <span class="comment"># 1) Do all the linear projections in batch from d_model =&gt; h x d_k </span></span><br><span class="line">        <span class="comment"># 首先利用zip将输入QKV与三个线性层组到一起，然后利用for循环，将输入QKV分别传到线性层中，做完线性变换后，开始为每个头分割输入，这里使用view方法对线性变换的结构进行维度重塑，多加了一个维度h代表头，这样就意味着每个头可以获得一部分词特征组成的句子，其中的-1代表自适应维度，计算机会根据这种变换自动计算这里的值，然后对第二维和第三维进行转置操作，为了让代表句子长度维度和词向量维度能够相邻，这样注意力机制才能找到词义与句子位置的关系，从attention函数中可以看到，利用的是原始输入的倒数第一和第二维，这样我们就得到了每个头的输入</span></span><br><span class="line">        query, key, value = \</span><br><span class="line">            [l(x).view(nbatches, -<span class="number">1</span>, self.h, self.d_k).transpose(<span class="number">1</span>, <span class="number">2</span>)</span><br><span class="line">             <span class="keyword">for</span> l, x <span class="keyword">in</span> <span class="built_in">zip</span>(self.linears, (query, key, value))]</span><br><span class="line"></span><br><span class="line">        <span class="comment"># 2) Apply attention on all the projected vectors in batch. </span></span><br><span class="line">        <span class="comment"># 得到每个头的输入后，接下来就是将他们传入到attention中，这里直接调用我们之前实现的attention函数，同时也将mask和dropout传入其中</span></span><br><span class="line">        x, self.attn = attention(query, key, value, mask=mask, </span><br><span class="line">                                 dropout=self.dropout)</span><br><span class="line"></span><br><span class="line">        <span class="comment"># 3) &quot;Concat&quot; using a view and apply a final linear. </span></span><br><span class="line">        <span class="comment"># 通过多头注意力计算后，我们就得到了每个头计算结果组成的4维张量，我们需要将其转换为输入的形状以方便后续的计算，因此这里开始进行第一步处理环节的逆操作，先对第二和第三维进行转置，然后使用contiguous方法。这个方法的作用就是能够让转置后的张量应用view方法，否则将无法直接使用，所以，下一步就是使用view重塑形状，变成和输入形状相同。  </span></span><br><span class="line">        x = x.transpose(<span class="number">1</span>, <span class="number">2</span>).contiguous() \</span><br><span class="line">             .view(nbatches, -<span class="number">1</span>, self.h * self.d_k)</span><br><span class="line">        <span class="comment">#最后使用线性层列表中的最后一个线性变换得到最终的多头注意力结构的输出</span></span><br><span class="line">        <span class="keyword">return</span> self.linears[-<span class="number">1</span>](x)</span><br></pre></td></tr></table></figure>
-
-<h3 id="3-5-Position-wise-Feed-Forward-neural-network"><a href="#3-5-Position-wise-Feed-Forward-neural-network" class="headerlink" title="3.5 Position-wise Feed Forward neural network"></a>3.5 Position-wise Feed Forward neural network</h3><figure class="highlight txt"><table><tr><td class="code"><pre><span class="line">在进行了Attention操作之后</span><br><span class="line">encoder和decoder中的每一层都包含了一个全连接前向网络</span><br><span class="line">对每个position的向量分别进行相同的操作，包括两个线性变换和一个ReLU激活输出</span><br></pre></td></tr></table></figure>
-
-<p><img src="/2023/11/19/Transformers/image-20231109125320365.png" alt="image-20231109125320365"></p>
-<figure class="highlight txt"><table><tr><td class="code"><pre><span class="line">对于并行计算的不同单词, 通过的FFN参数是共享的</span><br><span class="line">也可以看做不同单词先后通过同一个FFN, 如下图所示:</span><br></pre></td></tr></table></figure>
-
-<p><img src="/2023/11/19/Transformers/image-20231109125607481.png" alt="image-20231109125607481"></p>
-<h3 id="3-6-Layer-Norm"><a href="#3-6-Layer-Norm" class="headerlink" title="3.6 Layer Norm"></a><strong>3.6 Layer Norm</strong></h3><figure class="highlight txt"><table><tr><td class="code"><pre><span class="line">你应该接触过Batch Norm, Layer Norm也是一种类似于Batch Norm的归一化方式</span><br><span class="line">同样能起到加快收敛的作用, 在NLP任务中比较常用</span><br><span class="line">在Batch Norm中, 记录下多个Batch中每维Feature的均值和方差, 并进行放缩和平移</span><br><span class="line">即对不同样本的同一个通道特征进行归一化</span><br><span class="line">在Layer Norm中, 只是换了一个维度, 我们对同一个样本的不同特征进行归一化</span><br></pre></td></tr></table></figure>
-
-<p><img src="/2023/11/19/Transformers/image-20231109130306906.png" alt="image-20231109130306906"></p>
-<p>​                                                                                                                                                                                                                                                                    </p>
-<figure class="highlight txt"><table><tr><td class="code"><pre><span class="line">如果想了解它为什么和NLP领域比较契合, 详见下文:</span><br><span class="line"></span><br><span class="line">大致原因是Batch Norm对于Embedding后的数据进行归一化, 假设每个Batch是由多个Embedding组成的, 按照Batch方向对每个归一化, 就是对每个词的Embedding整体归一化. 这样做非常没有道理, 不符合NLP的规律, 它反而加强了不同词之间的相关性.</span><br><span class="line"></span><br><span class="line">但如果按照Layer Norm, 按照Layer方向, 实际上是分别对每个Embedding后的词向量进行归一化, 这样每个词向量相对独立.</span><br><span class="line"></span><br><span class="line">这主要还是CV和NLP的数据属性决定的. 在CV中, 不同样本之间的Channel信息是具有共性的(因为图像还是要用2D来表示), 这部分信息非常重要, 如果归一化会损失很多信息. 而NLP中, 数据是Embedding来的, 本来也没有包含位置信息, 反而不同词向量之间毫无相关性, 关注单词本身的归一化效果会更好.</span><br></pre></td></tr></table></figure>
-
-<h3 id="3-7-Residual"><a href="#3-7-Residual" class="headerlink" title="3.7 Residual"></a>3.7 Residual</h3><figure class="highlight txt"><table><tr><td class="code"><pre><span class="line">在Encoder中残差连接伴随着Layer Norm, 每次经过一个子层都要做一次残差连接</span><br></pre></td></tr></table></figure>
-
-<p><img src="/2023/11/19/Transformers/image-20231109131015757.png" alt="image-20231109131015757"></p>
-<figure class="highlight txt"><table><tr><td class="code"><pre><span class="line">在Decoder中也是同样的, 每次经过子层也都要做残差连接</span><br></pre></td></tr></table></figure>
-
-<h2 id="4、Decoder编码器"><a href="#4、Decoder编码器" class="headerlink" title="4、Decoder编码器"></a>4、Decoder编码器</h2><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">当了解了Encoder的结构后, 结合起Decoder来看一下信息流</span><br><span class="line">假设只有两个Encoder和两个Decoder的堆叠, 那么信息的流动方向是这样的:</span><br></pre></td></tr></table></figure>
-
-<p><img src="/2023/11/19/Transformers/image-20231109131412290.png" alt="image-20231109131412290"></p>
-<figure class="highlight txt"><table><tr><td class="code"><pre><span class="line">确实只有最后的Encoder将输出传递给了Decoder的Encoder - Decoder Attention</span><br><span class="line">Encoder的输出也是和Decoder唯一的交互数据，其最终输出就是经过多个堆叠的Encoder计算得来的与Encoder输入大小相同的向量，在交互的Encoder - Decoder Attention中会体现出来</span><br></pre></td></tr></table></figure>
-
-<h3 id="4-1-Encoder-Decoder-Attention-Cross-Attention"><a href="#4-1-Encoder-Decoder-Attention-Cross-Attention" class="headerlink" title="4.1 Encoder-Decoder Attention(Cross Attention)"></a>4.1 Encoder-Decoder Attention(Cross Attention)</h3><p><img src="/2023/11/19/Transformers/image-20231109131850445.png" alt="image-20231109131850445"></p>
-<h3 id="4-2-Outputs"><a href="#4-2-Outputs" class="headerlink" title="4.2 Outputs"></a>4.2 Outputs</h3><figure class="highlight txt"><table><tr><td class="code"><pre><span class="line">Decoder每过一个时间步不光接受Encoder的输出</span><br><span class="line">还接受了上一个Timestep的Decoder输入, 即论文中提到的”shifted right“.</span><br></pre></td></tr></table></figure>
-
-<h3 id="4-3-Masked-Multi-Head-Attention"><a href="#4-3-Masked-Multi-Head-Attention" class="headerlink" title="4.3 Masked Multi-Head Attention"></a>4.3 Masked Multi-Head Attention</h3><figure class="highlight txt"><table><tr><td class="code"><pre><span class="line">Mask是Transformer中一个关键点</span><br><span class="line">Masked Multi-Head Attention只出现在Decoder中</span><br><span class="line">到了Decoder, 可就不再像Encoder那样直接把数据拿过来并行训练了</span><br><span class="line">如果也像Encoder那样把所有输入的词向量全一股脑堆进去, Decoder做Self-Attention可以无视解码的时间跨度, 获知全部的信息, 因此需要用Mask将当前预测的单词和之后的单词全都遮盖, 否则就没法训练了</span><br></pre></td></tr></table></figure>
-
-<p><img src="/2023/11/19/Transformers/image-20231109132714857.png" alt="image-20231109132714857"></p>
-<p><img src="/2023/11/19/Transformers/image-20231109133414985.png" alt="image-20231109133414985"></p>
-<p><img src="/2023/11/19/Transformers/image-20231109133425348.png" alt="image-20231109133425348"></p>
-<p><strong>做Softmax时, 所有的负无穷全变成了0, 不再干扰计算:</strong></p>
-<p><img src="/2023/11/19/Transformers/image-20231109133439718.png" alt="image-20231109133439718"></p>
-<p>其实Mask在对句子的<strong>无效部分填充</strong>时, 也是用同样方法将所有句子补齐, 无效部分用负无穷填充的</p>
-<h2 id="5、最终输出"><a href="#5、最终输出" class="headerlink" title="5、最终输出"></a>5、最终输出</h2><figure class="highlight txt"><table><tr><td class="code"><pre><span class="line">最终输出很简单, 根据Decoder的输出经过FC层和Softmax得到对应的单词</span><br></pre></td></tr></table></figure>
-
-<p><img src="/2023/11/19/Transformers/image-20231109133548546.png" alt="image-20231109133548546"></p>
-<p>注意, Decoder的Embedding层和最后输出经过Softmax前的Linear层也是<strong>共享权重</strong>的</p>
-]]></content>
-      <tags>
-        <tag>论文</tag>
       </tags>
   </entry>
   <entry>
