@@ -1,0 +1,547 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 7.0.0">
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/logo.jpg">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/logo.jpg">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/logo.jpg">
+  <link rel="mask-icon" href="/images/logo.jpg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+<link rel="stylesheet" href="/lib/font-awesome/css/font-awesome.min.css">
+
+<script id="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"limokii.github.io","root":"/","scheme":"Pisces","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":false,"show_result":false,"style":null},"back2top":{"enable":true,"sidebar":false,"scrollpercent":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},"path":"search.xml"};
+  </script>
+
+  <meta name="description" content="本章是BERT模型概述，比较简略，大多数概念在Transformer精讲中提到">
+<meta property="og:type" content="article">
+<meta property="og:title" content="BERT">
+<meta property="og:url" content="https://limokii.github.io/2023/07/02/Bert/index.html">
+<meta property="og:site_name" content="Okii&#39;s blog">
+<meta property="og:description" content="本章是BERT模型概述，比较简略，大多数概念在Transformer精讲中提到">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="https://limokii.github.io/2023/07/02/Bert/1709118986826-1709118997567-2.jpg">
+<meta property="og:image" content="https://limokii.github.io/2023/07/02/Bert/image-20240228192818061.png">
+<meta property="og:image" content="https://limokii.github.io/2023/07/02/Bert/image-20240228195145317.png">
+<meta property="og:image" content="https://limokii.github.io/2023/07/02/Bert/image-20240228195922945.png">
+<meta property="og:image" content="https://limokii.github.io/2023/07/02/Bert/image-20240228200046531.png">
+<meta property="og:image" content="https://limokii.github.io/2023/07/02/Bert/image-20240228200020150.png">
+<meta property="og:image" content="https://limokii.github.io/2023/07/02/Bert/image-20240228200349940.png">
+<meta property="og:image" content="https://limokii.github.io/2023/07/02/Bert/image-20240228200502872.png">
+<meta property="article:published_time" content="2023-07-02T15:12:11.000Z">
+<meta property="article:modified_time" content="2024-03-02T12:09:31.643Z">
+<meta property="article:author" content="Okii">
+<meta property="article:tag" content="BERT">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://limokii.github.io/2023/07/02/Bert/1709118986826-1709118997567-2.jpg">
+
+<link rel="canonical" href="https://limokii.github.io/2023/07/02/Bert/">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome : false,
+    isPost : true,
+    lang   : 'zh-CN'
+  };
+</script>
+
+  <title>BERT | Okii's blog</title>
+  
+
+
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="container use-motion">
+    <div class="headband"></div>
+
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="切换导航栏">
+      <span class="toggle-line toggle-line-first"></span>
+      <span class="toggle-line toggle-line-middle"></span>
+      <span class="toggle-line toggle-line-last"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <span class="logo-line-before"><i></i></span>
+      <h1 class="site-title">Okii's blog</h1>
+      <span class="logo-line-after"><i></i></span>
+    </a>
+      <p class="site-subtitle" itemprop="description">仅作为记录自己的学习过程</p>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+        <i class="fa fa-search fa-fw fa-lg"></i>
+    </div>
+  </div>
+</div>
+
+
+
+
+<nav class="site-nav">
+  <ul id="menu" class="menu">
+        <li class="menu-item menu-item-home">
+
+    <a href="/" rel="section"><i class="fa fa-fw fa-home"></i>首页</a>
+
+  </li>
+        <li class="menu-item menu-item-tags">
+
+    <a href="/tags/" rel="section"><i class="fa fa-fw fa-tags"></i>标签<span class="badge">17</span></a>
+
+  </li>
+        <li class="menu-item menu-item-categories">
+
+    <a href="/categories/" rel="section"><i class="fa fa-fw fa-th"></i>分类<span class="badge">5</span></a>
+
+  </li>
+        <li class="menu-item menu-item-archives">
+
+    <a href="/archives/" rel="section"><i class="fa fa-fw fa-archive"></i>归档<span class="badge">18</span></a>
+
+  </li>
+      <li class="menu-item menu-item-search">
+        <a role="button" class="popup-trigger"><i class="fa fa-search fa-fw"></i>搜索
+        </a>
+      </li>
+  </ul>
+</nav>
+
+
+
+  <div class="search-pop-overlay">
+    <div class="popup search-popup">
+        <div class="search-header">
+  <span class="search-icon">
+    <i class="fa fa-search"></i>
+  </span>
+  <div class="search-input-container">
+    <input autocomplete="off" autocapitalize="off"
+           placeholder="搜索..." spellcheck="false"
+           type="search" class="search-input">
+  </div>
+  <span class="popup-btn-close">
+    <i class="fa fa-times-circle"></i>
+  </span>
+</div>
+<div id="search-result">
+  <div id="no-result">
+    <i class="fa fa-spinner fa-pulse fa-5x fa-fw"></i>
+  </div>
+</div>
+
+    </div>
+  </div>
+
+</div>
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+
+
+    <main class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+
+          <div class="content post posts-expand">
+            
+
+    
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="https://limokii.github.io/2023/07/02/Bert/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.jpg">
+      <meta itemprop="name" content="Okii">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Okii's blog">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          BERT
+        </h1>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+
+              <time title="创建时间：2023-07-02 23:12:11" itemprop="dateCreated datePublished" datetime="2023-07-02T23:12:11+08:00">2023-07-02</time>
+            </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/%E8%AE%BA%E6%96%87/" itemprop="url" rel="index"><span itemprop="name">论文</span></a>
+                </span>
+            </span>
+
+          <br>
+            <span class="post-meta-item" title="本文字数">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-file-word-o"></i>
+              </span>
+                <span class="post-meta-item-text">本文字数：</span>
+              <span>2.9k</span>
+            </span>
+            <span class="post-meta-item" title="阅读时长">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-clock-o"></i>
+              </span>
+                <span class="post-meta-item-text">阅读时长 &asymp;</span>
+              <span>5 分钟</span>
+            </span>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        <p>本章是BERT模型概述，比较简略，大多数概念在Transformer精讲中提到</p>
+<span id="more"></span>
+
+<h2 id="一、前言"><a href="#一、前言" class="headerlink" title="一、前言"></a>一、前言</h2><p>BERT 全称为 <strong>Bidirectional Encoder Representation from Transformer</strong>，是 Google 以无监督的方式利用大量<strong>无标注</strong>文本训练出的的语言模型，其架构为 Transformer 中的 Encoder。</p>
+<p>下文出现有关Transformer的概念将不再介绍，可参考之前的博客。</p>
+<p>在BERT 之前，为了解决不同的 NLP 任务，人们通常会为该任务设计一个最合适的神经网络架构并做训练</p>
+<p>不同的 NLP 任务通常需要不同的模型，而设计这些模型并测试其效果是非常耗成本的（人力，时间，计算资源） </p>
+<p><strong>如果有一个能直接处理各式 NLP 任务的通用架构该有多好？</strong></p>
+<p>随着时代演进，不少人很自然地有了这样子的想法，而 BERT 就是其中一个将此概念付诸实践的例子</p>
+<p>Google 在预训练 BERT 时让它同时进行两个任务：</p>
+<img src="/2023/07/02/Bert/1709118986826-1709118997567-2.jpg" alt="1709118986826" style="zoom: 50%;">
+
+<p>1、<strong>Masked Language Model</strong>：类似于完形填空</p>
+<p>2、<strong>Next Sentence Prediction</strong>：下一个句子的预测</p>
+<h2 id="二、Masked-Language-Model"><a href="#二、Masked-Language-Model" class="headerlink" title="二、Masked Language Model"></a>二、Masked Language Model</h2><p>在 BERT 中，Masked LM（Masked Language Model）构建了语言模型，简单来说，就是<strong>随机遮盖或替换</strong>一句话里面的任意字或词，然后让模型通过上下文预测那一个被遮盖或替换的部分，之后<strong>做 Loss 的时候也只计算被遮盖部分的 Loss</strong>，这其实是一个很容易理解的任务，实际操作如下：</p>
+<p>1、随机把一句话中 15% 的 token（字或词）替换成以下内容：</p>
+<ol>
+<li><p>这些 token 有 80% 的几率被替换成 <code>[MASK]</code>，例如 <code>my dog is hairy→my dog is [MASK]</code></p>
+</li>
+<li><p>有 10% 的几率被替换成任意一个其它的 token，例如 <code>my dog is hairy→my dog is apple</code></p>
+</li>
+<li><p>有 10% 的几率原封不动，例如 <code>my dog is hairy→my dog is hairy</code></p>
+</li>
+</ol>
+<p>2、之后让模型<strong>预测和还原</strong>被遮盖掉或替换掉的部分，计算损失的时候，只计算在第 1 步里被<strong>随机遮盖或替换</strong>的部分，其余部分不做损失，其余部分无论输出什么东西，都无所谓</p>
+<p>这样做的好处是，BERT 并不知道 <code>[MASK]</code> 替换的是哪一个词，而且任何一个词都有可能是被替换掉的，比如它看到的 apple 可能是被替换的词。这样强迫模型在编码当前时刻词的时候不能太依赖当前的词，而要考虑它的上下文，甚至根据上下文进行 “纠错”。比如上面的例子中，模型在编码 apple 时，根据上下文 my dog is，应该把 apple 编码成 hairy 的语义而不是 apple 的语义</p>
+<h2 id="三、Next-Sentence-Prediction"><a href="#三、Next-Sentence-Prediction" class="headerlink" title="三、Next Sentence Prediction"></a>三、Next Sentence Prediction</h2><p>我们首先拿到属于上下文的一对句子，也就是两个句子，之后我们要在这两个句子中加一些特殊的 token：<code>[CLS]上一句话[SEP]下一句话[SEP]</code>。也就是在句子开头加一个 <code>[CLS]</code>，在两句话之间和句末加 <code>[SEP]</code>，具体地如下图所示</p>
+<img src="/2023/07/02/Bert/image-20240228192818061.png" alt="image-20240228192818061" style="zoom: 67%;">
+
+<p>可以看到，上图中的两句话明显是连续的。如果现在有这么一句话 <code>[CLS]我的狗很可爱[SEP]你今天吃了吗[SEP]</code>，可见这两句话就不是连续的。在实际训练中，我们会让这两种情况出现的数量为 <strong>1:1</strong></p>
+<p><strong>Token Embedding</strong>就是正常的词向量，即 <code>PyTorch</code> 中的 <code>nn.Embedding()</code></p>
+<p><strong>Segment Embedding</strong>的作用是用 embedding 的信息让模型分开上下句，我们给上句的 token 全 0，下句的 token 全 1，让模型得以判断上下句的起止位置，例如</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">[CLS]我的狗很可爱[SEP]你今天吃了吗[SEP]</span><br><span class="line"> 0   0 0 0 0 0 0 0  1 1 1 1 1 1 1 </span><br></pre></td></tr></table></figure>
+
+<p><strong>Position Embedding</strong> 和 Transformer 中的不一样，不是三角函数，而是学习出来的</p>
+<h2 id="四、训练-微调"><a href="#四、训练-微调" class="headerlink" title="四、训练&amp;微调"></a>四、训练&amp;微调</h2><h4 id="Multi-Task-Learning"><a href="#Multi-Task-Learning" class="headerlink" title="Multi-Task Learning"></a>Multi-Task Learning</h4><p>BERT 预训练阶段实际上是将上述两个任务结合起来，同时进行，然后将所有的 Loss 相加，例如</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line">Input:</span><br><span class="line">[CLS] calculus is a branch of math [SEP] panda is native to [MASK] central china [SEP]</span><br><span class="line"></span><br><span class="line">Targets: false, south</span><br><span class="line">----------------------------------</span><br><span class="line">Input:</span><br><span class="line">[CLS] calculus is a [MASK] of math [SEP] it [MASK] developed by newton and leibniz [SEP]</span><br><span class="line"></span><br><span class="line">Targets: true, branch, was</span><br></pre></td></tr></table></figure>
+
+<h4 id="Fine-Tuning"><a href="#Fine-Tuning" class="headerlink" title="Fine-Tuning"></a>Fine-Tuning</h4><p>BERT 的 Fine-Tuning 共分为 4 中类型</p>
+<p>1、如果现在的任务是 <strong>classification</strong>，首先在输入句子的开头加一个代表分类的符号 <code>[CLS]</code>，然后将该位置的 output，丢给 Linear Classifier，让其 predict 一个 class 即可。整个过程中 Linear Classifier 的参数是需要从头开始学习的，而 BERT 中的参数微调就可以了</p>
+<p>为什么要用第一个位置，即 <code>[CLS]</code> 位置的 output。这里我看了网上的一些博客，结合自己的理解解释一下。因为 BERT 内部是 Transformer，而 Transformer 内部又是 Self-Attention，所以 <code>[CLS]</code> 的 output 里面肯定含有整句话的完整信息，这是毋庸置疑的。但是 Self-Attention 向量中，自己和自己的值其实是占大头的，现在假设使用 <code>w1</code> 的 output 做分类，那么这个 output 中实际上会更加看重 <code>w1</code>，而<code> w1</code> 又是一个有实际意义的字或词，这样难免会影响到最终的结果。但是 <code>[CLS]</code> 是没有任何实际意义的，只是一个占位符而已，所以就算 <code>[CLS]</code> 的 output 中自己的值占大头也无所谓。当然你也可以将所有词的 output 进行 concat，作为最终的 output</p>
+<img src="/2023/07/02/Bert/image-20240228195145317.png" alt="image-20240228195145317" style="zoom:50%;">
+
+<p>2、如果现在的任务是 <strong>Slot Filling</strong>，将句子中各个字对应位置的 output 分别送入不同的 Linear，预测出该字的标签。其实这本质上还是个分类问题，只不过是对每个字都要预测一个类别</p>
+<img src="/2023/07/02/Bert/image-20240228195922945.png" alt="image-20240228195922945" style="zoom:50%;">
+
+<p>3、如果现在的任务是 <strong>NLI（自然语言推理）</strong>。即给定一个前提，然后给出一个假设，模型要判断出这个假设是正确、错误还是不知道。这本质上是一个三分类的问题，和 Case 1 差不多，对 <code>[CLS]</code> 的 output 进行预测即可</p>
+<img src="/2023/07/02/Bert/image-20240228200046531.png" alt="image-20240228200046531" style="zoom:50%;">
+
+<p>4、如果现在的任务是 <strong>QA（问答）</strong>，举例来说，如上图，将一篇文章，和一个问题（这里的例子比较简单，答案一定会出现在文章中）送入模型中，模型会输出两个数 <code>s e</code>，这两个数表示，这个问题的答案，落在文章的第 <code>s</code> 个词到第 <code>e</code> 个词。具体流程我们可以看下面这幅图</p>
+<img src="/2023/07/02/Bert/image-20240228200020150.png" alt="image-20240228200020150" style="zoom: 50%;">
+
+<p>首先将问题和文章通过 <code>[SEP]</code> 分隔，送入 BERT 之后，得到下图中黄色的输出。此时我们还要训练两个 vector，即上图中橙色和蓝色的向量。首先将橙色和所有的黄色向量进行 dot product，然后通过 softmax，看哪一个输出的值最大，例如上图中 <code>d2</code> 对应的输出概率最大，那我们就认为 s&#x3D;2</p>
+<img src="/2023/07/02/Bert/image-20240228200349940.png" alt="image-20240228200349940" style="zoom:50%;">
+
+<p>同样地，我们用蓝色的向量和所有黄色向量进行 dot product，最终预测得 <code>d3</code> 的概率最大，因此 e&#x3D;3。最终，答案就是 s&#x3D;2,e&#x3D;3</p>
+<img src="/2023/07/02/Bert/image-20240228200502872.png" alt="image-20240228200502872" style="zoom:50%;">
+    </div>
+
+    
+    
+    
+        
+
+<div>
+<ul class="post-copyright">
+  <li class="post-copyright-author">
+    <strong>本文作者： </strong>Okii
+  </li>
+  <li class="post-copyright-link">
+    <strong>本文链接：</strong>
+    <a href="https://limokii.github.io/2023/07/02/Bert/" title="BERT">https://limokii.github.io/2023/07/02/Bert/</a>
+  </li>
+  <li class="post-copyright-license">
+    <strong>版权声明： </strong>本博客所有文章除特别声明外，均采用 <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/" rel="noopener" target="_blank"><i class="fa fa-fw fa-creative-commons"></i>BY-NC-SA</a> 许可协议。转载请注明出处！
+  </li>
+</ul>
+</div>
+
+
+      <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/tags/BERT/" rel="tag"># BERT</a>
+          </div>
+
+        
+
+
+        
+    <div class="post-nav">
+      <div class="post-nav-item">
+    <a href="/2023/06/27/Transformers/" rel="prev" title="Transformers 理解">
+      <i class="fa fa-chevron-left"></i> Transformers 理解
+    </a></div>
+      <div class="post-nav-item">
+    <a href="/2023/12/13/Hexo%20+%20Typora%20+%20Github%20%E5%8D%9A%E5%AE%A2%E6%90%AD%E5%BB%BA/" rel="next" title="Hexo + Typora + Github 博客搭建">
+      Hexo + Typora + Github 博客搭建 <i class="fa fa-chevron-right"></i>
+    </a></div>
+    </div>
+      </footer>
+    
+  </article>
+  
+  
+  
+
+
+
+          </div>
+          
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let { activeClass } = CONFIG.comments;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      let activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      let commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+        </div>
+          
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          文章目录
+        </li>
+        <li class="sidebar-nav-overview">
+          站点概览
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#%E4%B8%80%E3%80%81%E5%89%8D%E8%A8%80"><span class="nav-text">一、前言</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E4%BA%8C%E3%80%81Masked-Language-Model"><span class="nav-text">二、Masked Language Model</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E4%B8%89%E3%80%81Next-Sentence-Prediction"><span class="nav-text">三、Next Sentence Prediction</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%9B%9B%E3%80%81%E8%AE%AD%E7%BB%83-%E5%BE%AE%E8%B0%83"><span class="nav-text">四、训练&amp;微调</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#Multi-Task-Learning"><span class="nav-text">Multi-Task Learning</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#Fine-Tuning"><span class="nav-text">Fine-Tuning</span></a></li></ol></li></ol></li></ol></div>
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+    <img class="site-author-image" itemprop="image" alt="Okii"
+      src="/images/avatar.jpg">
+  <p class="site-author-name" itemprop="name">Okii</p>
+  <div class="site-description" itemprop="description"></div>
+</div>
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/archives/">
+        
+          <span class="site-state-item-count">18</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+            <a href="/categories/">
+          
+        <span class="site-state-item-count">5</span>
+        <span class="site-state-item-name">分类</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+            <a href="/tags/">
+          
+        <span class="site-state-item-count">17</span>
+        <span class="site-state-item-name">标签</span></a>
+      </div>
+  </nav>
+</div>
+  <div class="links-of-author motion-element">
+      <span class="links-of-author-item">
+        <a href="https://github.com/LimOkii" title="GitHub → https:&#x2F;&#x2F;github.com&#x2F;LimOkii" rel="noopener" target="_blank"><i class="fa fa-fw fa-github"></i>GitHub</a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="mailto:lyfei1126@gmail.com" title="E-Mail → mailto:lyfei1126@gmail.com" rel="noopener" target="_blank"><i class="fa fa-fw fa-envelope"></i>E-Mail</a>
+      </span>
+  </div>
+
+
+
+      </div>
+
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        
+
+        
+
+<div class="copyright">
+  
+  &copy; 
+  <span itemprop="copyrightYear">2024</span>
+  <span class="with-love">
+    <i class="fa fa-user"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">Okii</span>
+</div>
+  <div class="powered-by">由 <a href="https://hexo.io/" class="theme-link" rel="noopener" target="_blank">Hexo</a> & <a href="https://pisces.theme-next.org/" class="theme-link" rel="noopener" target="_blank">NexT.Pisces</a> 强力驱动
+  </div>
+
+        
+
+
+
+
+
+
+
+
+      </div>
+    </footer>
+  </div>
+
+  
+  <script src="/lib/anime.min.js"></script>
+  <script src="/lib/velocity/velocity.min.js"></script>
+  <script src="/lib/velocity/velocity.ui.min.js"></script>
+
+<script src="/js/utils.js"></script>
+
+<script src="/js/motion.js"></script>
+
+
+<script src="/js/schemes/pisces.js"></script>
+
+
+<script src="/js/next-boot.js"></script>
+
+
+
+
+  
+
+
+
+
+  
+<script src="/js/local-search.js"></script>
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+
+</body>
+</html>

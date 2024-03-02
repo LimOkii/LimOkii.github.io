@@ -1,0 +1,571 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 7.0.0">
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/logo.jpg">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/logo.jpg">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/logo.jpg">
+  <link rel="mask-icon" href="/images/logo.jpg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+<link rel="stylesheet" href="/lib/font-awesome/css/font-awesome.min.css">
+
+<script id="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"limokii.github.io","root":"/","scheme":"Pisces","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":false,"show_result":false,"style":null},"back2top":{"enable":true,"sidebar":false,"scrollpercent":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},"path":"search.xml"};
+  </script>
+
+  <meta name="description" content="本章是同济大学对于当前RAG技术的综述，对照翻译进行了小结，当作了解">
+<meta property="og:type" content="article">
+<meta property="og:title" content="RAG综述小结">
+<meta property="og:url" content="https://limokii.github.io/2024/01/09/RAG%E7%BB%BC%E8%BF%B0%E5%B0%8F%E7%BB%93/index.html">
+<meta property="og:site_name" content="Okii&#39;s blog">
+<meta property="og:description" content="本章是同济大学对于当前RAG技术的综述，对照翻译进行了小结，当作了解">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="https://limokii.github.io/2024/01/09/RAG%E7%BB%BC%E8%BF%B0%E5%B0%8F%E7%BB%93/image-20240223194102311.png">
+<meta property="og:image" content="https://limokii.github.io/2024/01/09/RAG%E7%BB%BC%E8%BF%B0%E5%B0%8F%E7%BB%93/image-20240123104215622.png">
+<meta property="og:image" content="https://limokii.github.io/2024/01/09/RAG%E7%BB%BC%E8%BF%B0%E5%B0%8F%E7%BB%93/image-20240123110958566.png">
+<meta property="og:image" content="https://limokii.github.io/2024/01/09/RAG%E7%BB%BC%E8%BF%B0%E5%B0%8F%E7%BB%93/image-20240123111840061.png">
+<meta property="og:image" content="https://limokii.github.io/2024/01/09/RAG%E7%BB%BC%E8%BF%B0%E5%B0%8F%E7%BB%93/image-20240123170205815.png">
+<meta property="og:image" content="https://limokii.github.io/2024/01/09/RAG%E7%BB%BC%E8%BF%B0%E5%B0%8F%E7%BB%93/image-20240123202207150.png">
+<meta property="article:published_time" content="2024-01-09T15:12:11.000Z">
+<meta property="article:modified_time" content="2024-03-02T12:07:20.847Z">
+<meta property="article:author" content="Okii">
+<meta property="article:tag" content="RAG综述">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://limokii.github.io/2024/01/09/RAG%E7%BB%BC%E8%BF%B0%E5%B0%8F%E7%BB%93/image-20240223194102311.png">
+
+<link rel="canonical" href="https://limokii.github.io/2024/01/09/RAG%E7%BB%BC%E8%BF%B0%E5%B0%8F%E7%BB%93/">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome : false,
+    isPost : true,
+    lang   : 'zh-CN'
+  };
+</script>
+
+  <title>RAG综述小结 | Okii's blog</title>
+  
+
+
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="container use-motion">
+    <div class="headband"></div>
+
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="切换导航栏">
+      <span class="toggle-line toggle-line-first"></span>
+      <span class="toggle-line toggle-line-middle"></span>
+      <span class="toggle-line toggle-line-last"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <span class="logo-line-before"><i></i></span>
+      <h1 class="site-title">Okii's blog</h1>
+      <span class="logo-line-after"><i></i></span>
+    </a>
+      <p class="site-subtitle" itemprop="description">仅作为记录自己的学习过程</p>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+        <i class="fa fa-search fa-fw fa-lg"></i>
+    </div>
+  </div>
+</div>
+
+
+
+
+<nav class="site-nav">
+  <ul id="menu" class="menu">
+        <li class="menu-item menu-item-home">
+
+    <a href="/" rel="section"><i class="fa fa-fw fa-home"></i>首页</a>
+
+  </li>
+        <li class="menu-item menu-item-tags">
+
+    <a href="/tags/" rel="section"><i class="fa fa-fw fa-tags"></i>标签<span class="badge">17</span></a>
+
+  </li>
+        <li class="menu-item menu-item-categories">
+
+    <a href="/categories/" rel="section"><i class="fa fa-fw fa-th"></i>分类<span class="badge">5</span></a>
+
+  </li>
+        <li class="menu-item menu-item-archives">
+
+    <a href="/archives/" rel="section"><i class="fa fa-fw fa-archive"></i>归档<span class="badge">18</span></a>
+
+  </li>
+      <li class="menu-item menu-item-search">
+        <a role="button" class="popup-trigger"><i class="fa fa-search fa-fw"></i>搜索
+        </a>
+      </li>
+  </ul>
+</nav>
+
+
+
+  <div class="search-pop-overlay">
+    <div class="popup search-popup">
+        <div class="search-header">
+  <span class="search-icon">
+    <i class="fa fa-search"></i>
+  </span>
+  <div class="search-input-container">
+    <input autocomplete="off" autocapitalize="off"
+           placeholder="搜索..." spellcheck="false"
+           type="search" class="search-input">
+  </div>
+  <span class="popup-btn-close">
+    <i class="fa fa-times-circle"></i>
+  </span>
+</div>
+<div id="search-result">
+  <div id="no-result">
+    <i class="fa fa-spinner fa-pulse fa-5x fa-fw"></i>
+  </div>
+</div>
+
+    </div>
+  </div>
+
+</div>
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+
+
+    <main class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+
+          <div class="content post posts-expand">
+            
+
+    
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="https://limokii.github.io/2024/01/09/RAG%E7%BB%BC%E8%BF%B0%E5%B0%8F%E7%BB%93/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.jpg">
+      <meta itemprop="name" content="Okii">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Okii's blog">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          RAG综述小结
+        </h1>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+
+              <time title="创建时间：2024-01-09 23:12:11" itemprop="dateCreated datePublished" datetime="2024-01-09T23:12:11+08:00">2024-01-09</time>
+            </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/%E8%AE%BA%E6%96%87/" itemprop="url" rel="index"><span itemprop="name">论文</span></a>
+                </span>
+            </span>
+
+          <br>
+            <span class="post-meta-item" title="本文字数">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-file-word-o"></i>
+              </span>
+                <span class="post-meta-item-text">本文字数：</span>
+              <span>6.3k</span>
+            </span>
+            <span class="post-meta-item" title="阅读时长">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-clock-o"></i>
+              </span>
+                <span class="post-meta-item-text">阅读时长 &asymp;</span>
+              <span>11 分钟</span>
+            </span>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        <p>本章是同济大学对于当前RAG技术的综述，对照翻译进行了小结，当作了解</p>
+<span id="more"></span>
+
+<h2 id="一、前言"><a href="#一、前言" class="headerlink" title="一、前言"></a>一、前言</h2><p>尽管大模型的能力令人印象深刻，但它们并非无懈可击。这些模型可能会产生误导性的 “幻觉”，依赖的信息可能过时，处理特定知识时效率不高，缺乏专业领域的深度洞察，同时在推理能力上也有所欠缺。</p>
+<p>在现实世界的应用中，数据需要不断更新以反映最新的发展，生成的内容必须是透明可追溯的，以便控制成本并保护数据隐私。因此，简单依赖于这些 “黑盒” 模型是不够的，我们需要更精细的解决方案来满足这些复杂的需求。</p>
+<p>因此，检索增强生成技术（Retrieval-Augmented Generation，RAG）应时而生，成为 AI 时代的一大趋势。</p>
+<p><strong>一句话概括RAG:</strong> RAG 通过在语言模型生成答案之前，先从广泛的文档数据库中检索相关信息，然后利用这些信息来引导生成过程。</p>
+<p>这极大地提升了内容的准确性和相关性。RAG 有效地缓解了幻觉问题，提高了知识更新的速度，并增强了内容生成的可追溯性，使得大型语言模型在实际应用中变得更加实用和可信。</p>
+<p><strong>检索增强与微调</strong></p>
+<p>可以把 RAG 想象成给模型提供一本教科书，让它根据特定的问题去查找信息。这种方法适用于模型需要解答具体问题或执行特定信息检索任务的情况。但 RAG 并不适合于教会模型理解广泛的领域或学习新的语言、格式或风格。</p>
+<p>而微调更像是让学生通过广泛学习来吸收知识。</p>
+<p>当模型需要模仿特定的结构、风格或格式时，微调就显得非常有用。它可以提高未经微调的模型的表现，使交互更加高效。</p>
+<p>微调特别适用于强化模型已有的知识、调整或定制模型的输出，以及给模型下达复杂的指令。然而，微调并不适合于向模型中添加新的知识，或者在需要快速迭代新场景的情况下使用。</p>
+<p><img src="/2024/01/09/RAG%E7%BB%BC%E8%BF%B0%E5%B0%8F%E7%BB%93/image-20240223194102311.png" alt="image-20240223194102311"></p>
+<img src="/2024/01/09/RAG%E7%BB%BC%E8%BF%B0%E5%B0%8F%E7%BB%93/image-20240123104215622.png" alt="image-20240123104215622" style="zoom: 50%;">
+
+<p>RAG 的概念首次于 2020 年被提出，随后进入高速发展，如图所示的是RAG 技术发展的科技树。</p>
+<p>RAG 的相关研究进展可以明确地划分为数个关键阶段。在早期的预训练阶段，研究的焦点集中在如何通过预训练模型注入额外的知识，以此增强语言模型的能力。随着 ChatGPT的面世，对于运用大型模型进行深层次上下文学习的兴趣激增，这推动了 RAG 技术在研究领域的快速发展。随着 LLMs 的潜力被进一步开发，旨在提升模型的可控性并满足不断演变的需求，RAG 的研究逐渐聚焦于增强推理能力，并且也探索了在微调过程中的各种改进方法。特别是随着 GPT-4 的发布，RAG 技术经历了一次深刻的变革。研究重点开始转移至一种新的融合 RAG 和微调策略的方法，并且持续关注对预训练方法的优化。</p>
+<p>在 RAG 的技术发展过程中，从技术范式角度，将其总结成如下几个阶段：</p>
+<p>1、Naive RAG</p>
+<p>2、Advanced RAG</p>
+<p>3、Modular RAG</p>
+<h2 id="二、Naive-RAG"><a href="#二、Naive-RAG" class="headerlink" title="二、Naive RAG"></a>二、Naive RAG</h2><p><img src="/2024/01/09/RAG%E7%BB%BC%E8%BF%B0%E5%B0%8F%E7%BB%93/image-20240123110958566.png" alt="image-20240123110958566"></p>
+<p>上图所示的是经典的RAG流程，称为Naive RAG，朴素版</p>
+<p>主要包括如下三个步骤：</p>
+<p>1、索引——将文档库分割成较短的Chunk，并通过某个embedding模型构建向量索引</p>
+<p>2、检索——将问题通过同样的embedding模型和文本Chunk作相似度匹配检索相关的文档片段</p>
+<p>3、生成——以检索到的上下文用某种Prompt构造方式喂入大模型，让其生成问题的回答</p>
+<p>朴素 RAG 主要在三个方面面临挑战：检索质量、回应生成质量和增强过程。</p>
+<p>1、<strong>检索质量：</strong>最主要的问题是低精度，即检索集中的文档块并不都与查询内容相关，这可能导致信息错误或不连贯。其次是低召回率问题，即未能检索到所有相关的文档块，使得大语言模型无法获取足够的背景信息来合成答案。此外，过时信息也是一个挑战，因为数据冗余或过时可能导致检索结果不准确。</p>
+<p>2、<strong>回应生成质量：</strong>最突出的问题是制造错误信息，即模型在缺乏足够上下文的情况下虚构答案。另一个问题是回答不相关，即模型生成的答案未能针对查询问题。进一步来说，生成有害或偏见性回应也是一个问题。</p>
+<p>3、<strong>增强过程：</strong> 最终，增强过程面临几个重要挑战。特别重要的是，如何将检索到的文段的上下文有效融入当前的生成任务。如果处理不得当，生成的内容可能显得杂乱无章。当多个检索到的文段包含相似信息时，冗余和重复成为问题，这可能导致生成内容的重复。此外，如何判断多个检索到的文段对生成任务的重要性或相关性非常有挑战性，增强过程需要恰当地评估每个文段的价值。检索到的内容可能具有不同的写作风格或语调，增强过程需调和这些差异，以确保最终输出的一致性。最后，生成模型可能会过度依赖于增强信息，导致生成的内容仅是重复检索到的信息，而缺乏新的价值或综合信息。</p>
+<h2 id="三、Advanced-RAG"><a href="#三、Advanced-RAG" class="headerlink" title="三、Advanced RAG"></a>三、Advanced RAG</h2><p><img src="/2024/01/09/RAG%E7%BB%BC%E8%BF%B0%E5%B0%8F%E7%BB%93/image-20240123111840061.png" alt="image-20240123111840061"></p>
+<p>Naive RAG 在检索质量、响应生成质量以及增强过程中会有很多问题，最突出的就是召回文档质量不佳的问题，继而严重影响了后续的生成质量</p>
+<p>因此Advanced RAG 范式随后被提出，并在数据索引、检索前和检索后都进行了额外处理。通过更精细的数据清洗、设计文档结构和添加元数据等方法提升文本的一致性、准确性和检索效率。在检索前阶段则可以使用<strong>问题的重写、路由和扩充</strong>等方式对齐问题和文档块之间的语义差异。在检索后阶段则可以通过将检索出来的文档库进行重排序避免 “Lost in the Middle ” 现象的发生。或是通过上下文筛选与压缩的方式缩短窗口长度</p>
+<p>上图中的绿色元素是接下来讨论的核心检索增强生成（RAG）技术，蓝色的则是文本</p>
+<p>下面逐一来介绍核心RAG技术，非常的多：</p>
+<h3 id="3-1-Query-transformations"><a href="#3-1-Query-transformations" class="headerlink" title="3.1 Query transformations"></a>3.1 Query transformations</h3><p>Query transformations(查询转换)是一组技术，使用LLM作为推理引擎来修改用户输入以提高检索质量。</p>
+<p>有几种不同的方法可以做到这一点</p>
+<img src="/2024/01/09/RAG%E7%BB%BC%E8%BF%B0%E5%B0%8F%E7%BB%93/image-20240123170205815.png" alt="image-20240123170205815" style="zoom: 67%;">
+
+<p>如果某个查询是复杂的，LLM可以将其分解为几个简单的子查询</p>
+<p>例如你问：<code>“在GitHub上，Langchain和LlamaIndex哪个框架的星星更多？&quot;</code></p>
+<p>可能对于这个问题，语料库中没有直接的文本能给出问题的直接答案。但是如果将这个问题分解为两个子查询，那或许是能找到相关的信息，例如将上面的问题分解为：<code>“Langchain在GitHub上有多少星星？”</code>和<code>“LlamaIndex在GitHub上有多少星星？” </code></p>
+<p>这些查询将并行执行，然后将检索到的上下文合并为一个提示，供LLM合成对初始查询的最终答案。这两个库都实现了这个功能——在<code>Langchain</code>中作为多查询检索器，在<code>LlamaIndex</code>中作为子问题查询引擎。</p>
+<p>查询转换的好处在于：</p>
+<p>1、逐步提示使用LLM生成更一般的查询，我们检索到的上下文更一般或高层次，有助于支持我们原始查询的答案。并且，原始查询也会执行检索，并且在最终生成答案的步骤中，将转换后的查询检索到的两个上下文一起输入LLM。</p>
+<p>2、查询重写使用LLM重新表述初始查询以改善检索。<code>LangChain</code>和<code>LlamaIndex</code>都有实现。</p>
+<h3 id="3-2-Query-Routing"><a href="#3-2-Query-Routing" class="headerlink" title="3.2 Query Routing"></a>3.2 Query Routing</h3><p>Query Routing(查询路由)是在给定用户查询的情况下，由LLM驱动的决策步骤，决定下一步要做什么——通常的选择是总结、对某些数据索引执行搜索，或尝试多种不同的路线，然后将它们的输出综合成一个答案。</p>
+<h3 id="3-3-Fusion-Retrieval"><a href="#3-3-Fusion-Retrieval" class="headerlink" title="3.3 Fusion Retrieval"></a>3.3 Fusion Retrieval</h3><p>Fusion Retrieval(混合检索)的优势在于它结合了不同检索技术的长处。它智能地融合了关键词搜索、语义搜索和向量搜索等多种技术，适应不同类型的查询需求，确保能够一致地检索到最相关和内容丰富的信息。混合检索作为检索策略的重要补充，能够显著提升 RAG 流程的整体性能。</p>
+<p>1、基于关键词的传统搜索——稀疏检索算法，如<code>tf-idf</code>或搜索行业标准<code>BM25</code> </p>
+<p>2、现代语义或向量搜索</p>
+<p>  最后将上述检索结果合并到一个检索结果中</p>
+<h3 id="3-4-Re-rank"><a href="#3-4-Re-rank" class="headerlink" title="3.4 Re-rank"></a>3.4 Re-rank</h3><img src="/2024/01/09/RAG%E7%BB%BC%E8%BF%B0%E5%B0%8F%E7%BB%93/image-20240123202207150.png" alt="image-20240123202207150" style="zoom:80%;">
+
+<p>Re-rank(重新排序)，将最相关的信息置于提示的前后边缘，是一个简单直接的方法。这一思路已在如 <code>LlamaIndex</code>、<code>LangChain</code> 和 <code>HayStack</code> 等框架中得到应用。例如，<code>Diversity Ranker</code>会根据文档的多样性进行重新排序，而<code> LostInTheMiddleRanker</code> 则会交替地将最佳文档放在上下文窗口的开始和结束位置。同时，为了应对基于向量的语义相似度模拟搜索的挑战，方法如 <code>cohereAI rerank </code>、<code>bgererank5</code> 或 <code>LongLLMLingua</code>，会重新计算相关文本与查询之间的语义相似度。</p>
+<h3 id="3-5-Embedding"><a href="#3-5-Embedding" class="headerlink" title="3.5 Embedding"></a>3.5 Embedding</h3><h4 id="3-5-1-微调嵌入"><a href="#3-5-1-微调嵌入" class="headerlink" title="3.5.1 微调嵌入"></a>3.5.1 微调嵌入</h4><p>微调嵌入模型的调整直接影响到 RAG 的有效性。微调的目的是让检索到的内容与查询之间的相关性更加紧密。微调嵌入的作用可以比作在语音生成前对“听觉”进行调整，优化检索内容对最终输出的影响。通常，微调嵌入的方法可以分为针对特定领域上下文的嵌入调整和检索步骤的优化。特别是在处理不断变化或罕见术语的专业领域，这些定制化的嵌入方法能够显著提高检索的相关性。<code>BGE</code>嵌入模型是一个经过微调的高性能嵌入模型，例如由 <code>BAAI 3</code> 开发的 <code>BGE-large-EN</code>。为了对 BGE 模型进行微调，首先使用诸如 <code>gpt-3.5-turbo</code> 这样的大语言模型（LLM）根据文档块制定问题，其中问题和答案（文档块）构成了微调过程中的训练对。</p>
+<h4 id="3-5-2-动态嵌入"><a href="#3-5-2-动态嵌入" class="headerlink" title="3.5.2 动态嵌入"></a>3.5.2 动态嵌入</h4><p>不同于静态嵌入，动态嵌入根据单词出现的上下文进行调整，为每个单词提供不同的向量表示。例如，在 <code>Transformer</code> 模型（如 <code>BERT</code>）中，同一单词根据周围词汇的不同，其嵌入也会有所变化。研究发现，在 OpenAI的 <code>text-embeddingada-002</code> 模型中，文本长度小于 5 个 <code>token</code> 时，常出现意外高的余弦相似度。理想的嵌入应该包含足够的上下文，以保证良好的结果。OpenAI 的 <code>embeddings-ada-02</code> 是基于大语言模型（如 GPT）原理开发的，比传统静态嵌入模型更复杂，能够捕捉一定程度的上下文。尽管它在上下文理解方面表现出色，但可能不如最新的大语言模型（如 GPT-4）那样对上下文敏感。</p>
+<h3 id="3-6-HyDE"><a href="#3-6-HyDE" class="headerlink" title="3.6 HyDE"></a>3.6 HyDE</h3><p>这种方法基于一个假设：相较于直接查询，通过大语言模型 (LLM) 生成的答案在嵌入空间中可能更为接近。HyDE 首先响应查询生成一个假设性文档（答案），然后将其嵌入，并利用此嵌入去检索与假设文档类似的真实文档。这种方法强调答案之间的嵌入相似性，而非单纯依赖于查询的嵌入相似性。但在某些情况下，特别是当语言模型对话题不够熟悉时，它可能导致错误实例的增加。</p>
+<h2 id="四、Modular-RAG"><a href="#四、Modular-RAG" class="headerlink" title="四、Modular RAG"></a>四、Modular RAG</h2><p><strong>搜索模块：</strong> 与简单&#x2F;高级 RAG 的查询和语料间的常规相似性检索不同，这个特定场景下的搜索模块融合了直接在（附加的）语料库中进行搜索的方法。这些方法包括利用大语言模型（LLM）生成的代码、SQL、Cypher 等查询语言，或是其他定制工具。其搜索数据源多样，涵盖搜索引擎、文本数据、表格数据或知识图等。</p>
+<p><strong>额外生成模块：</strong> 面对检索内容中的冗余和噪声问题，这个模块通过大语言模型生成必要的上下文，而非直接从数据源进行检索。通过这种方式，由大语言模型生成的内容更可能包含与检索任务相关的信息。</p>
+<p>非常的多……</p>
+<p>……</p>
+<h2 id="五、检索器"><a href="#五、检索器" class="headerlink" title="五、检索器"></a>五、检索器</h2><p>在 RAG（检索增强生成）技术中，“R”代表检索，其作用是从大量知识库中检索出最相关的前 k 个文档</p>
+<h3 id="5-1-如何获得准确的语义表示？"><a href="#5-1-如何获得准确的语义表示？" class="headerlink" title="5.1 如何获得准确的语义表示？"></a>5.1 如何获得准确的语义表示？</h3><p><strong>块优化</strong></p>
+<p>处理外部文档的第一步是分块，以获得更细致的特征。接着，这些文档块被嵌入（Embedded）。</p>
+<p>嵌入太大或太小的文本块可能无法取得最佳效果。因此，找到适合语料库文档的最佳块大小至关重要，以确保搜索结果的准确性和相关性。</p>
+<p>选择分块策略时，需要考虑的要素包括：被索引内容的特点、使用的嵌入模型及其最适块大小、用户查询的预期长度和复杂度、以及检索结果在特定应用中的使用方式。例如，对于不同长度的内容，应选用不同的分块模型。不同的嵌入模型，如 Sentence-Transformer 和 text-embedding-ada-002，在处理不同大小的文本块时效果各异；例如，Sentence-Transformer 更适合单句处理，而 text-embedding-ada-002 更适合处理包含 256 或 512 Token 的文本块。用户问题文本的长度和复杂性，以及应用程序的特定需求（如语义搜索或问答），也会影响分块策略的选择。这可能与选用的大语言模型的 Token 限制直接相关，因此可能需要调整块大小。实际上，准确的查询结果是通过灵活应用多种分块策略来实现的，并没有最佳策略，只有最适合的策略。</p>
+<p>Small2big 技术在搜索过程中使用小文本块，并为语言模型提供更大的相关文本块进行处理。摘要嵌入（Abstract embedding）技术对文档摘要执行 Top K 检索，以提供完整的文档上下文。元数据过滤（Metadata Filtering）技术通过文档的元数据进行过滤。图索引（Graph Indexing）技术把实体和关系转化为节点和连接，这在处理多跳问题时显著提升了相关性。这些方法的结合显著提升了 RAG 的检索效果和性能。</p>
+<p><strong>微调嵌入模型</strong></p>
+<p>在确定了 Chunk 的适当大小之后，我们需要通过一个嵌入模型（Embedding model）将 Chunk 和查询嵌入到语义空间中。因此，嵌入模型是否能有效代表整个语料库变得极其重要。如今，一些出色的嵌入模型已经问世，例如 UAE[AngIE, 2023]、Voyage[VoyageAI, 2023]、BGE[BAAI, 2023] 等，它们在大规模语料库上预训练过。但在特定领域中应用时，这些模型可能无法准确地反映领域特定的语料信息。此外，为了确保模型能够理解用户查询与内容的相关性，对嵌入模型进行任务特定的微调至关重要，否则未经微调的模型可能无法满足特定任务的需求。因此，对嵌入模型进行微调对于其下游应用是必不可少的。</p>
+<p><strong>领域知识微调</strong></p>
+<p>嵌入模型微调的两个基本范式包括领域知识微调。为了让嵌入模型准确理解领域特定信息，我们需要构建专门的领域数据集来对嵌入模型进行微调。</p>
+<p>然而，嵌入模型的微调与常规语言模型的微调不同，主要区别在于所使用的数据集。当前微调嵌入模型的主流方法使用的数据集包括查询（Queries）、语料库（Corpus）和相关文档（Relevant Docs）。嵌入模型基于查询在语料库中检索相关文档，然后根据查询的相关文档是否命中作为衡量模型的标准。</p>
+<p>在构建数据集、微调模型和评估过程中，每个部分都可能遇到各种挑战。LlamaIndex [Liu, 2023] 专门为嵌入模型的微调过程引入了一系列关键类别和功能，大大简化了这一过程。通过准备领域知识的语料库并利用其提供的方法，我们可以轻松获得适合特定领域需求的专业嵌入模型。</p>
+<h3 id="5-2-如何协调查询和文档的语义空间"><a href="#5-2-如何协调查询和文档的语义空间" class="headerlink" title="5.2 如何协调查询和文档的语义空间"></a>5.2 如何协调查询和文档的语义空间</h3><p><strong>查询重写</strong></p>
+<p>这种做法使用大模型本身先对查询进行回复，生成一个指导性的伪文档。然后将原始查询与这个伪文档结合，形成一个新的查询。<br>HyDE则是根据查询生成一个假设性文档（答案），然后将其嵌入，并利用此嵌入去检索与假设文档类似的真实文档。</p>
+<p><strong>嵌入变换</strong></p>
+<p>不太懂</p>
+<h2 id="六、生成器"><a href="#六、生成器" class="headerlink" title="六、生成器"></a>六、生成器</h2><p>在 RAG 系统中，生成是核心部分之一，它的职责是将检索到的信息转化为自然流畅的文本。</p>
+<h3 id="5-1-如何通过后检索处理提升检索结果？"><a href="#5-1-如何通过后检索处理提升检索结果？" class="headerlink" title="5.1 如何通过后检索处理提升检索结果？"></a>5.1 如何通过后检索处理提升检索结果？</h3><p>后检索处理指的是，在通过检索器从大型文档数据库中检索到相关信息后，对这些信息进行进一步的处理、过滤或优化。其主要目的是提高检索结果的质量，更好地满足用户需求或为后续任务做准备。可以将其理解为对检索阶段获得的文档进行二次处理。后检索处理通常包括信息压缩和结果的重新排序。</p>
+<h3 id="5-2-如何优化生成器应对输入数据？"><a href="#5-2-如何优化生成器应对输入数据？" class="headerlink" title="5.2 如何优化生成器应对输入数据？"></a>5.2 如何优化生成器应对输入数据？</h3><p>在 RAG 模型中，优化生成器是至关重要的。生成器负责将检索到的信息转化为相关文本，形成模型的最终输出。其优化目的在于确保生成文本既流畅又能有效利用检索文档，更好地回应用户的查询。</p>
+
+    </div>
+
+    
+    
+    
+        
+
+<div>
+<ul class="post-copyright">
+  <li class="post-copyright-author">
+    <strong>本文作者： </strong>Okii
+  </li>
+  <li class="post-copyright-link">
+    <strong>本文链接：</strong>
+    <a href="https://limokii.github.io/2024/01/09/RAG%E7%BB%BC%E8%BF%B0%E5%B0%8F%E7%BB%93/" title="RAG综述小结">https://limokii.github.io/2024/01/09/RAG综述小结/</a>
+  </li>
+  <li class="post-copyright-license">
+    <strong>版权声明： </strong>本博客所有文章除特别声明外，均采用 <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/" rel="noopener" target="_blank"><i class="fa fa-fw fa-creative-commons"></i>BY-NC-SA</a> 许可协议。转载请注明出处！
+  </li>
+</ul>
+</div>
+
+
+      <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/tags/RAG%E7%BB%BC%E8%BF%B0/" rel="tag"># RAG综述</a>
+          </div>
+
+        
+
+
+        
+    <div class="post-nav">
+      <div class="post-nav-item">
+    <a href="/2024/01/06/%E6%95%B0%E7%BB%84%E7%AF%87/" rel="prev" title="Leetcode 数组篇">
+      <i class="fa fa-chevron-left"></i> Leetcode 数组篇
+    </a></div>
+      <div class="post-nav-item">
+    <a href="/2024/01/10/%E9%93%BE%E8%A1%A8%E7%AF%87/" rel="next" title="Leetcode 链表篇">
+      Leetcode 链表篇 <i class="fa fa-chevron-right"></i>
+    </a></div>
+    </div>
+      </footer>
+    
+  </article>
+  
+  
+  
+
+
+
+          </div>
+          
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let { activeClass } = CONFIG.comments;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      let activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      let commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+        </div>
+          
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          文章目录
+        </li>
+        <li class="sidebar-nav-overview">
+          站点概览
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#%E4%B8%80%E3%80%81%E5%89%8D%E8%A8%80"><span class="nav-text">一、前言</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E4%BA%8C%E3%80%81Naive-RAG"><span class="nav-text">二、Naive RAG</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E4%B8%89%E3%80%81Advanced-RAG"><span class="nav-text">三、Advanced RAG</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#3-1-Query-transformations"><span class="nav-text">3.1 Query transformations</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#3-2-Query-Routing"><span class="nav-text">3.2 Query Routing</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#3-3-Fusion-Retrieval"><span class="nav-text">3.3 Fusion Retrieval</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#3-4-Re-rank"><span class="nav-text">3.4 Re-rank</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#3-5-Embedding"><span class="nav-text">3.5 Embedding</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#3-5-1-%E5%BE%AE%E8%B0%83%E5%B5%8C%E5%85%A5"><span class="nav-text">3.5.1 微调嵌入</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#3-5-2-%E5%8A%A8%E6%80%81%E5%B5%8C%E5%85%A5"><span class="nav-text">3.5.2 动态嵌入</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#3-6-HyDE"><span class="nav-text">3.6 HyDE</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%9B%9B%E3%80%81Modular-RAG"><span class="nav-text">四、Modular RAG</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E4%BA%94%E3%80%81%E6%A3%80%E7%B4%A2%E5%99%A8"><span class="nav-text">五、检索器</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#5-1-%E5%A6%82%E4%BD%95%E8%8E%B7%E5%BE%97%E5%87%86%E7%A1%AE%E7%9A%84%E8%AF%AD%E4%B9%89%E8%A1%A8%E7%A4%BA%EF%BC%9F"><span class="nav-text">5.1 如何获得准确的语义表示？</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#5-2-%E5%A6%82%E4%BD%95%E5%8D%8F%E8%B0%83%E6%9F%A5%E8%AF%A2%E5%92%8C%E6%96%87%E6%A1%A3%E7%9A%84%E8%AF%AD%E4%B9%89%E7%A9%BA%E9%97%B4"><span class="nav-text">5.2 如何协调查询和文档的语义空间</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%85%AD%E3%80%81%E7%94%9F%E6%88%90%E5%99%A8"><span class="nav-text">六、生成器</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#5-1-%E5%A6%82%E4%BD%95%E9%80%9A%E8%BF%87%E5%90%8E%E6%A3%80%E7%B4%A2%E5%A4%84%E7%90%86%E6%8F%90%E5%8D%87%E6%A3%80%E7%B4%A2%E7%BB%93%E6%9E%9C%EF%BC%9F"><span class="nav-text">5.1 如何通过后检索处理提升检索结果？</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#5-2-%E5%A6%82%E4%BD%95%E4%BC%98%E5%8C%96%E7%94%9F%E6%88%90%E5%99%A8%E5%BA%94%E5%AF%B9%E8%BE%93%E5%85%A5%E6%95%B0%E6%8D%AE%EF%BC%9F"><span class="nav-text">5.2 如何优化生成器应对输入数据？</span></a></li></ol></li></ol></div>
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+    <img class="site-author-image" itemprop="image" alt="Okii"
+      src="/images/avatar.jpg">
+  <p class="site-author-name" itemprop="name">Okii</p>
+  <div class="site-description" itemprop="description"></div>
+</div>
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/archives/">
+        
+          <span class="site-state-item-count">18</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+            <a href="/categories/">
+          
+        <span class="site-state-item-count">5</span>
+        <span class="site-state-item-name">分类</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+            <a href="/tags/">
+          
+        <span class="site-state-item-count">17</span>
+        <span class="site-state-item-name">标签</span></a>
+      </div>
+  </nav>
+</div>
+  <div class="links-of-author motion-element">
+      <span class="links-of-author-item">
+        <a href="https://github.com/LimOkii" title="GitHub → https:&#x2F;&#x2F;github.com&#x2F;LimOkii" rel="noopener" target="_blank"><i class="fa fa-fw fa-github"></i>GitHub</a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="mailto:lyfei1126@gmail.com" title="E-Mail → mailto:lyfei1126@gmail.com" rel="noopener" target="_blank"><i class="fa fa-fw fa-envelope"></i>E-Mail</a>
+      </span>
+  </div>
+
+
+
+      </div>
+
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        
+
+        
+
+<div class="copyright">
+  
+  &copy; 
+  <span itemprop="copyrightYear">2024</span>
+  <span class="with-love">
+    <i class="fa fa-user"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">Okii</span>
+</div>
+  <div class="powered-by">由 <a href="https://hexo.io/" class="theme-link" rel="noopener" target="_blank">Hexo</a> & <a href="https://pisces.theme-next.org/" class="theme-link" rel="noopener" target="_blank">NexT.Pisces</a> 强力驱动
+  </div>
+
+        
+
+
+
+
+
+
+
+
+      </div>
+    </footer>
+  </div>
+
+  
+  <script src="/lib/anime.min.js"></script>
+  <script src="/lib/velocity/velocity.min.js"></script>
+  <script src="/lib/velocity/velocity.ui.min.js"></script>
+
+<script src="/js/utils.js"></script>
+
+<script src="/js/motion.js"></script>
+
+
+<script src="/js/schemes/pisces.js"></script>
+
+
+<script src="/js/next-boot.js"></script>
+
+
+
+
+  
+
+
+
+
+  
+<script src="/js/local-search.js"></script>
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+
+</body>
+</html>

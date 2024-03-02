@@ -1,0 +1,570 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 7.0.0">
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/logo.jpg">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/logo.jpg">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/logo.jpg">
+  <link rel="mask-icon" href="/images/logo.jpg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+<link rel="stylesheet" href="/lib/font-awesome/css/font-awesome.min.css">
+
+<script id="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"limokii.github.io","root":"/","scheme":"Pisces","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":false,"show_result":false,"style":null},"back2top":{"enable":true,"sidebar":false,"scrollpercent":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},"path":"search.xml"};
+  </script>
+
+  <meta name="description" content="Leetcode刷题记录——二叉树属性篇">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Leetcode 二叉树属性篇">
+<meta property="og:url" content="https://limokii.github.io/2024/02/03/%E4%BA%8C%E5%8F%89%E6%A0%91%E2%80%94%E2%80%94%E5%B1%9E%E6%80%A7%E7%AF%87/index.html">
+<meta property="og:site_name" content="Okii&#39;s blog">
+<meta property="og:description" content="Leetcode刷题记录——二叉树属性篇">
+<meta property="og:locale" content="zh_CN">
+<meta property="article:published_time" content="2024-02-03T15:12:11.000Z">
+<meta property="article:modified_time" content="2024-03-02T12:02:13.181Z">
+<meta property="article:author" content="Okii">
+<meta property="article:tag" content="Leetcode">
+<meta property="article:tag" content="二叉树属性">
+<meta name="twitter:card" content="summary">
+
+<link rel="canonical" href="https://limokii.github.io/2024/02/03/%E4%BA%8C%E5%8F%89%E6%A0%91%E2%80%94%E2%80%94%E5%B1%9E%E6%80%A7%E7%AF%87/">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome : false,
+    isPost : true,
+    lang   : 'zh-CN'
+  };
+</script>
+
+  <title>Leetcode 二叉树属性篇 | Okii's blog</title>
+  
+
+
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="container use-motion">
+    <div class="headband"></div>
+
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="切换导航栏">
+      <span class="toggle-line toggle-line-first"></span>
+      <span class="toggle-line toggle-line-middle"></span>
+      <span class="toggle-line toggle-line-last"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <span class="logo-line-before"><i></i></span>
+      <h1 class="site-title">Okii's blog</h1>
+      <span class="logo-line-after"><i></i></span>
+    </a>
+      <p class="site-subtitle" itemprop="description">仅作为记录自己的学习过程</p>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+        <i class="fa fa-search fa-fw fa-lg"></i>
+    </div>
+  </div>
+</div>
+
+
+
+
+<nav class="site-nav">
+  <ul id="menu" class="menu">
+        <li class="menu-item menu-item-home">
+
+    <a href="/" rel="section"><i class="fa fa-fw fa-home"></i>首页</a>
+
+  </li>
+        <li class="menu-item menu-item-tags">
+
+    <a href="/tags/" rel="section"><i class="fa fa-fw fa-tags"></i>标签<span class="badge">17</span></a>
+
+  </li>
+        <li class="menu-item menu-item-categories">
+
+    <a href="/categories/" rel="section"><i class="fa fa-fw fa-th"></i>分类<span class="badge">5</span></a>
+
+  </li>
+        <li class="menu-item menu-item-archives">
+
+    <a href="/archives/" rel="section"><i class="fa fa-fw fa-archive"></i>归档<span class="badge">18</span></a>
+
+  </li>
+      <li class="menu-item menu-item-search">
+        <a role="button" class="popup-trigger"><i class="fa fa-search fa-fw"></i>搜索
+        </a>
+      </li>
+  </ul>
+</nav>
+
+
+
+  <div class="search-pop-overlay">
+    <div class="popup search-popup">
+        <div class="search-header">
+  <span class="search-icon">
+    <i class="fa fa-search"></i>
+  </span>
+  <div class="search-input-container">
+    <input autocomplete="off" autocapitalize="off"
+           placeholder="搜索..." spellcheck="false"
+           type="search" class="search-input">
+  </div>
+  <span class="popup-btn-close">
+    <i class="fa fa-times-circle"></i>
+  </span>
+</div>
+<div id="search-result">
+  <div id="no-result">
+    <i class="fa fa-spinner fa-pulse fa-5x fa-fw"></i>
+  </div>
+</div>
+
+    </div>
+  </div>
+
+</div>
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+
+
+    <main class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+
+          <div class="content post posts-expand">
+            
+
+    
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="https://limokii.github.io/2024/02/03/%E4%BA%8C%E5%8F%89%E6%A0%91%E2%80%94%E2%80%94%E5%B1%9E%E6%80%A7%E7%AF%87/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.jpg">
+      <meta itemprop="name" content="Okii">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Okii's blog">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          Leetcode 二叉树属性篇
+        </h1>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+
+              <time title="创建时间：2024-02-03 23:12:11" itemprop="dateCreated datePublished" datetime="2024-02-03T23:12:11+08:00">2024-02-03</time>
+            </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/Leetcode-%E5%88%B7%E9%A2%98/" itemprop="url" rel="index"><span itemprop="name">Leetcode 刷题</span></a>
+                </span>
+            </span>
+
+          <br>
+            <span class="post-meta-item" title="本文字数">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-file-word-o"></i>
+              </span>
+                <span class="post-meta-item-text">本文字数：</span>
+              <span>4.7k</span>
+            </span>
+            <span class="post-meta-item" title="阅读时长">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-clock-o"></i>
+              </span>
+                <span class="post-meta-item-text">阅读时长 &asymp;</span>
+              <span>9 分钟</span>
+            </span>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        <p>Leetcode刷题记录——二叉树属性篇</p>
+<span id="more"></span>
+<h2 id="Leetcode101-对称二叉树"><a href="#Leetcode101-对称二叉树" class="headerlink" title="Leetcode101 对称二叉树"></a>Leetcode101 对称二叉树</h2><p><strong>递归三部曲</strong></p>
+<p>1、确定递归函数的参数和返回值</p>
+<p>因为我们要比较的是根节点的两个子树是否是相互翻转的，进而判断这个树是不是对称树，所以要比较的是两个树，参数自然也是左子树节点和右子树节点。</p>
+<p>返回值自然是<code>bool</code>类型。</p>
+<p>2、确定终止条件</p>
+<p>要比较两个节点数值相不相同，首先要把两个节点为空的情况弄清楚！否则后面比较数值的时候就会操作空指针了。</p>
+<p>节点为空的情况有：（<strong>注意我们比较的其实不是左孩子和右孩子，所以如下我称之为左节点右节点</strong>）</p>
+<ul>
+<li>左节点为空，右节点不为空，不对称，<code>return false</code></li>
+<li>左不为空，右为空，不对称 <code>return false</code></li>
+<li>左右都为空，对称，<code>return true</code></li>
+</ul>
+<p>此时已经排除掉了节点为空的情况，那么剩下的就是左右节点不为空：</p>
+<ul>
+<li>左右都不为空，比较节点数值，不相同就<code>return false</code></li>
+</ul>
+<p>3、确定单层递归的逻辑</p>
+<p>此时才进入单层递归的逻辑，单层递归的逻辑就是处理 左右节点都不为空，且数值相同的情况。</p>
+<ul>
+<li>比较二叉树外侧是否对称：传入的是左节点的左孩子，右节点的右孩子。</li>
+<li>比较内侧是否对称，传入左节点的右孩子，右节点的左孩子。</li>
+<li>如果左右都对称就返回<code>true</code> ，有一侧不对称就返回<code>false</code> 。</li>
+</ul>
+<p><strong>Python代码如下：</strong></p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># Definition for a binary tree node.</span></span><br><span class="line"><span class="comment"># class TreeNode:</span></span><br><span class="line"><span class="comment">#     def __init__(self, val=0, left=None, right=None):</span></span><br><span class="line"><span class="comment">#         self.val = val</span></span><br><span class="line"><span class="comment">#         self.left = left</span></span><br><span class="line"><span class="comment">#         self.right = right</span></span><br><span class="line"><span class="keyword">class</span> <span class="title class_">Solution</span>:</span><br><span class="line">    <span class="keyword">def</span> <span class="title function_">isSymmetric</span>(<span class="params">self, root: <span class="type">Optional</span>[TreeNode]</span>) -&gt; <span class="built_in">bool</span>:</span><br><span class="line">        <span class="keyword">if</span> <span class="keyword">not</span> root:</span><br><span class="line">            <span class="keyword">return</span> <span class="literal">True</span></span><br><span class="line">        <span class="keyword">return</span> self.compare(root.left, root.right)</span><br><span class="line">    <span class="keyword">def</span> <span class="title function_">compare</span>(<span class="params">self, left, right</span>):</span><br><span class="line">        <span class="keyword">if</span> left == <span class="literal">None</span> <span class="keyword">and</span> right != <span class="literal">None</span>: </span><br><span class="line">            <span class="keyword">return</span> <span class="literal">False</span></span><br><span class="line">        <span class="keyword">elif</span> left != <span class="literal">None</span> <span class="keyword">and</span> right == <span class="literal">None</span>: </span><br><span class="line">            <span class="keyword">return</span> <span class="literal">False</span></span><br><span class="line">        <span class="keyword">elif</span> left == <span class="literal">None</span> <span class="keyword">and</span> right == <span class="literal">None</span>: </span><br><span class="line">            <span class="keyword">return</span> <span class="literal">True</span></span><br><span class="line">        <span class="keyword">elif</span> left.val != right.val: </span><br><span class="line">            <span class="keyword">return</span> <span class="literal">False</span></span><br><span class="line">        outside = self.compare(left.left, right.right)</span><br><span class="line">        inside = self.compare(left.right, right.left)</span><br><span class="line">        isSame = outside <span class="keyword">and</span> inside</span><br><span class="line">        <span class="keyword">return</span> isSame</span><br></pre></td></tr></table></figure>
+
+<h2 id="Leetcode110-平衡二叉树"><a href="#Leetcode110-平衡二叉树" class="headerlink" title="Leetcode110 平衡二叉树"></a>Leetcode110 平衡二叉树</h2><p>求高度(到叶子节点的距离) 用后序遍历</p>
+<p>求深度(到根节点的距离) 用前序遍历</p>
+<p><strong>递归三部曲：</strong></p>
+<p>1、明确递归函数的参数和返回值</p>
+<p>参数：当前传入节点    返回值：以当前传入节点为根的树的高度</p>
+<p>如果，某个节点为根的二叉树已经不是平衡二叉树，那么返回高度就没有必要了，可以返回<code>-1</code></p>
+<p>2、明确终止条件</p>
+<p>递归的过程中依然是遇到空节点了为终止，返回<code>0</code>，表示当前节点为根节点的树高度为<code>0</code></p>
+<p>3、明确单层递归的逻辑</p>
+<p>分别求其左右子树的高度，然后如果差值小于等于<code>1</code>，则返回当前二叉树的高度，否则返回<code>-1</code>，表示已经不是二叉平衡树了。</p>
+<p><strong>Python代码如下：</strong></p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># Definition for a binary tree node.</span></span><br><span class="line"><span class="comment"># class TreeNode:</span></span><br><span class="line"><span class="comment">#     def __init__(self, val=0, left=None, right=None):</span></span><br><span class="line"><span class="comment">#         self.val = val</span></span><br><span class="line"><span class="comment">#         self.left = left</span></span><br><span class="line"><span class="comment">#         self.right = right</span></span><br><span class="line"><span class="keyword">class</span> <span class="title class_">Solution</span>:</span><br><span class="line">    <span class="keyword">def</span> <span class="title function_">isBalanced</span>(<span class="params">self, root: <span class="type">Optional</span>[TreeNode]</span>) -&gt; <span class="built_in">bool</span>:</span><br><span class="line">        <span class="keyword">if</span> self.get_height(root) == -<span class="number">1</span>:</span><br><span class="line">            <span class="keyword">return</span> <span class="literal">False</span></span><br><span class="line">        <span class="keyword">else</span>:</span><br><span class="line">            <span class="keyword">return</span> <span class="literal">True</span></span><br><span class="line">    <span class="keyword">def</span> <span class="title function_">get_height</span>(<span class="params">self, root</span>):</span><br><span class="line">        <span class="keyword">if</span> <span class="keyword">not</span> root:</span><br><span class="line">            <span class="keyword">return</span> <span class="number">0</span></span><br><span class="line">        left = self.get_height(root.left)</span><br><span class="line">        right = self.get_height(root.right)</span><br><span class="line">        <span class="keyword">if</span> left == -<span class="number">1</span> <span class="keyword">or</span> right == -<span class="number">1</span> <span class="keyword">or</span> <span class="built_in">abs</span>(left - right) &gt; <span class="number">1</span>:</span><br><span class="line">            <span class="keyword">return</span> -<span class="number">1</span></span><br><span class="line">        <span class="keyword">return</span> <span class="number">1</span> + <span class="built_in">max</span>(left, right)</span><br></pre></td></tr></table></figure>
+
+<h2 id="Leetcode257-二叉树的所有路径"><a href="#Leetcode257-二叉树的所有路径" class="headerlink" title="Leetcode257 二叉树的所有路径"></a>Leetcode257 二叉树的所有路径</h2><p><strong>依旧是递归三部曲：</strong></p>
+<p>1、递归函数参数以及返回值</p>
+<p>传入根节点，记录每一条路径的<code>path</code>，和存放最终结果的<code>res</code></p>
+<p>2、确定递归的终止条件</p>
+<p><strong>那么什么时候算是找到了叶子节点？</strong> 是当 <code>cur</code>不为空，其左右孩子都为空的时候，就找到叶子节点。</p>
+<p>3、确定单层递归逻辑</p>
+<p>因为是前序遍历，需要先处理中间节点，中间节点就是我们要记录路径上的节点，先放进<code>path</code>中。</p>
+<p><code>path.append(cur.val)</code></p>
+<p>然后是递归和回溯的过程，上面说过没有判断<code>cur</code>是否为空，那么在这里递归的时候，如果为空就不进行下一层递归了。</p>
+<p>此时还没完，递归完，要做回溯，因为<code>path</code> 不能一直加入节点，它还要删节点，然后才能加入新的节点</p>
+<p>我们知道，<strong>回溯和递归是一一对应的，有一个递归，就要有一个回溯，所以回溯要和递归永远在一起</strong></p>
+<p><strong>Python代码如下：</strong></p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># Definition for a binary tree node.</span></span><br><span class="line"><span class="comment"># class TreeNode:</span></span><br><span class="line"><span class="comment">#     def __init__(self, val=0, left=None, right=None):</span></span><br><span class="line"><span class="comment">#         self.val = val</span></span><br><span class="line"><span class="comment">#         self.left = left</span></span><br><span class="line"><span class="comment">#         self.right = right</span></span><br><span class="line"><span class="keyword">class</span> <span class="title class_">Solution</span>:</span><br><span class="line">    <span class="keyword">def</span> <span class="title function_">binaryTreePaths</span>(<span class="params">self, root: <span class="type">Optional</span>[TreeNode]</span>) -&gt; <span class="type">List</span>[<span class="built_in">str</span>]:</span><br><span class="line">        res = []</span><br><span class="line">        path = []</span><br><span class="line">        <span class="keyword">if</span> <span class="keyword">not</span> root:</span><br><span class="line">            <span class="keyword">return</span> res</span><br><span class="line">        self.traversal(root, path, res)</span><br><span class="line">        <span class="keyword">return</span> res</span><br><span class="line">    <span class="keyword">def</span> <span class="title function_">traversal</span>(<span class="params">self, cur, path, result</span>):</span><br><span class="line">        path.append(cur.val)</span><br><span class="line">        <span class="comment"># 说明到达了叶子节点</span></span><br><span class="line">        <span class="keyword">if</span> <span class="keyword">not</span> cur.left <span class="keyword">and</span> <span class="keyword">not</span> cur.right:</span><br><span class="line">            <span class="comment"># path数组里元素是int, 不能直接join, 要转换str</span></span><br><span class="line">            str_path = <span class="string">&#x27;-&gt;&#x27;</span>.join(<span class="built_in">map</span>(<span class="built_in">str</span>,path))</span><br><span class="line">            result.append(str_path)</span><br><span class="line">            <span class="keyword">return</span></span><br><span class="line">        <span class="keyword">if</span> cur.left:</span><br><span class="line">            self.traversal(cur.left, path, result)</span><br><span class="line">            path.pop()</span><br><span class="line">        <span class="keyword">if</span> cur.right:</span><br><span class="line">            self.traversal(cur.right, path, result)</span><br><span class="line">            path.pop()</span><br></pre></td></tr></table></figure>
+
+<h2 id="Leetcode404-左叶子之和"><a href="#Leetcode404-左叶子之和" class="headerlink" title="Leetcode404 左叶子之和"></a>Leetcode404 左叶子之和</h2><p><strong>依旧是递归三部曲：</strong></p>
+<p>1、确定递归函数的参数和返回值</p>
+<p>判断一个树的左叶子节点之和，那么一定要传入树的根节点，递归函数的返回值为数值之和</p>
+<p>2、确定终止条件</p>
+<p>如果遍历到空节点，那么<code>return 0</code></p>
+<p>3、确定单层递归逻辑</p>
+<p>当遇到左叶子节点的时候，记录数值；然后通过递归求取左子树左叶子之和，和 右子树左叶子之和，相加便是整个树的左叶子之和。</p>
+<p><strong>Python代码如下：</strong></p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># Definition for a binary tree node.</span></span><br><span class="line"><span class="comment"># class TreeNode:</span></span><br><span class="line"><span class="comment">#     def __init__(self, val=0, left=None, right=None):</span></span><br><span class="line"><span class="comment">#         self.val = val</span></span><br><span class="line"><span class="comment">#         self.left = left</span></span><br><span class="line"><span class="comment">#         self.right = right</span></span><br><span class="line"><span class="keyword">class</span> <span class="title class_">Solution</span>:</span><br><span class="line">    <span class="keyword">def</span> <span class="title function_">sumOfLeftLeaves</span>(<span class="params">self, root: <span class="type">Optional</span>[TreeNode]</span>) -&gt; <span class="built_in">int</span>:</span><br><span class="line">        <span class="keyword">if</span> <span class="keyword">not</span> root:</span><br><span class="line">            <span class="keyword">return</span> <span class="number">0</span></span><br><span class="line">        left_num = self.sumOfLeftLeaves(root.left)</span><br><span class="line">        <span class="keyword">if</span> root.left <span class="keyword">and</span> <span class="keyword">not</span> root.left.left <span class="keyword">and</span> <span class="keyword">not</span> root.left.right:</span><br><span class="line">            left_num = root.left.val</span><br><span class="line">        right_num = self.sumOfLeftLeaves(root.right)</span><br><span class="line">        <span class="built_in">sum</span> = left_num + right_num</span><br><span class="line">        <span class="keyword">return</span> <span class="built_in">sum</span></span><br></pre></td></tr></table></figure>
+
+<h2 id="Leetcode112-路径总和"><a href="#Leetcode112-路径总和" class="headerlink" title="Leetcode112 路径总和"></a>Leetcode112 路径总和</h2><p><strong>还是递归三部曲，一直总结加强记忆：</strong></p>
+<p>1、确定递归函数的参数和返回值</p>
+<p>参数：需要当前子树的根节点和一个计数器，这个计数器用来计算二叉树的一条边之和是否正好是目标和</p>
+<p><strong>递归函数什么时候需要或者不需要返回值：</strong></p>
+<ul>
+<li>如果需要<strong>搜索</strong>整棵二叉树且不用处理递归返回值，递归函数就不要返回值</li>
+<li>如果需要搜索整棵二叉树且需要处理递归返回值，递归函数就需要返回值</li>
+<li>如果要搜索其中一条符合条件的路径，那么递归一定需要返回值，因为遇到符合条件的路径了就要及时返回。(本题的情况)</li>
+</ul>
+<p>2、确定终止条件</p>
+<p>如果每次递归累加<code>val</code>，代码处理起来比较麻烦，可以考虑每次递归时，减去当前的<code>val</code></p>
+<p>如果最后<code>targetSum == 0</code>，同时到了叶子节点的话，说明找到了目标和。</p>
+<p>如果遍历到了叶子节点，<code>targetSum</code>不为<code>0</code>，就是没找到。</p>
+<p>3、确定单层递归的逻辑</p>
+<p>因为目前很多题都是遍历到叶子节点，<code>tarversal</code>一开始没有判断空指针</p>
+<p>所以在进入递归前要判断其是否是空指针</p>
+<p>递归函数是有返回值的，如果递归函数返回<code>true</code>，说明找到了合适的路径，应该立刻返回</p>
+<p>而且这道题要注意递归完之后的回溯，减掉的<code>val</code>要再加回去</p>
+<p><strong>Python代码如下：</strong></p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># Definition for a binary tree node.</span></span><br><span class="line"><span class="comment"># class TreeNode:</span></span><br><span class="line"><span class="comment">#     def __init__(self, val=0, left=None, right=None):</span></span><br><span class="line"><span class="comment">#         self.val = val</span></span><br><span class="line"><span class="comment">#         self.left = left</span></span><br><span class="line"><span class="comment">#         self.right = right</span></span><br><span class="line"><span class="keyword">class</span> <span class="title class_">Solution</span>:</span><br><span class="line">    <span class="keyword">def</span> <span class="title function_">hasPathSum</span>(<span class="params">self, root: <span class="type">Optional</span>[TreeNode], targetSum: <span class="built_in">int</span></span>) -&gt; <span class="built_in">bool</span>:</span><br><span class="line">        <span class="keyword">if</span> <span class="keyword">not</span> root:</span><br><span class="line">            <span class="keyword">return</span> <span class="literal">False</span></span><br><span class="line">        <span class="keyword">return</span> self.tarversal(root, targetSum-root.val)</span><br><span class="line"></span><br><span class="line">    <span class="keyword">def</span> <span class="title function_">tarversal</span>(<span class="params">self, root, targetSum</span>):</span><br><span class="line">        <span class="keyword">if</span> <span class="keyword">not</span> root.left <span class="keyword">and</span> <span class="keyword">not</span> root.right <span class="keyword">and</span> targetSum == <span class="number">0</span>:</span><br><span class="line">            <span class="keyword">return</span> <span class="literal">True</span></span><br><span class="line">        <span class="keyword">if</span> <span class="keyword">not</span> root.left <span class="keyword">and</span> <span class="keyword">not</span> root.right <span class="keyword">and</span> targetSum != <span class="number">0</span>:</span><br><span class="line">            <span class="keyword">return</span> <span class="literal">False</span></span><br><span class="line">        <span class="keyword">if</span> root.left:</span><br><span class="line">            targetSum -= root.left.val</span><br><span class="line">            <span class="keyword">if</span> self.tarversal(root.left, targetSum):</span><br><span class="line">                <span class="keyword">return</span> <span class="literal">True</span></span><br><span class="line">            targetSum += root.left.val</span><br><span class="line">        <span class="keyword">if</span> root.right:</span><br><span class="line">            targetSum -= root.right.val</span><br><span class="line">            <span class="keyword">if</span> self.tarversal(root.right, targetSum):</span><br><span class="line">                <span class="keyword">return</span> <span class="literal">True</span></span><br><span class="line">            targetSum += root.right.val</span><br><span class="line">        <span class="keyword">return</span> <span class="literal">False</span></span><br></pre></td></tr></table></figure>
+
+
+    </div>
+
+    
+    
+    
+        
+
+<div>
+<ul class="post-copyright">
+  <li class="post-copyright-author">
+    <strong>本文作者： </strong>Okii
+  </li>
+  <li class="post-copyright-link">
+    <strong>本文链接：</strong>
+    <a href="https://limokii.github.io/2024/02/03/%E4%BA%8C%E5%8F%89%E6%A0%91%E2%80%94%E2%80%94%E5%B1%9E%E6%80%A7%E7%AF%87/" title="Leetcode 二叉树属性篇">https://limokii.github.io/2024/02/03/二叉树——属性篇/</a>
+  </li>
+  <li class="post-copyright-license">
+    <strong>版权声明： </strong>本博客所有文章除特别声明外，均采用 <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/" rel="noopener" target="_blank"><i class="fa fa-fw fa-creative-commons"></i>BY-NC-SA</a> 许可协议。转载请注明出处！
+  </li>
+</ul>
+</div>
+
+
+      <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/tags/Leetcode/" rel="tag"># Leetcode</a>
+              <a href="/tags/%E4%BA%8C%E5%8F%89%E6%A0%91%E5%B1%9E%E6%80%A7/" rel="tag"># 二叉树属性</a>
+          </div>
+
+        
+
+
+        
+    <div class="post-nav">
+      <div class="post-nav-item">
+    <a href="/2024/01/31/%E4%BA%8C%E5%8F%89%E6%A0%91%E2%80%94%E2%80%94%E9%81%8D%E5%8E%86%E7%AF%87/" rel="prev" title="Leetcode 二叉树遍历篇">
+      <i class="fa fa-chevron-left"></i> Leetcode 二叉树遍历篇
+    </a></div>
+      <div class="post-nav-item">
+    <a href="/2024/02/07/%E4%BA%8C%E5%8F%89%E6%A0%91%E2%80%94%E2%80%94%E4%BF%AE%E6%94%B9%E4%B8%8E%E6%9E%84%E9%80%A0/" rel="next" title="Leetcode 二叉树修改与构造篇">
+      Leetcode 二叉树修改与构造篇 <i class="fa fa-chevron-right"></i>
+    </a></div>
+    </div>
+      </footer>
+    
+  </article>
+  
+  
+  
+
+
+
+          </div>
+          
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let { activeClass } = CONFIG.comments;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      let activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      let commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+        </div>
+          
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          文章目录
+        </li>
+        <li class="sidebar-nav-overview">
+          站点概览
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#Leetcode101-%E5%AF%B9%E7%A7%B0%E4%BA%8C%E5%8F%89%E6%A0%91"><span class="nav-text">Leetcode101 对称二叉树</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Leetcode110-%E5%B9%B3%E8%A1%A1%E4%BA%8C%E5%8F%89%E6%A0%91"><span class="nav-text">Leetcode110 平衡二叉树</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Leetcode257-%E4%BA%8C%E5%8F%89%E6%A0%91%E7%9A%84%E6%89%80%E6%9C%89%E8%B7%AF%E5%BE%84"><span class="nav-text">Leetcode257 二叉树的所有路径</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Leetcode404-%E5%B7%A6%E5%8F%B6%E5%AD%90%E4%B9%8B%E5%92%8C"><span class="nav-text">Leetcode404 左叶子之和</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Leetcode112-%E8%B7%AF%E5%BE%84%E6%80%BB%E5%92%8C"><span class="nav-text">Leetcode112 路径总和</span></a></li></ol></div>
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+    <img class="site-author-image" itemprop="image" alt="Okii"
+      src="/images/avatar.jpg">
+  <p class="site-author-name" itemprop="name">Okii</p>
+  <div class="site-description" itemprop="description"></div>
+</div>
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/archives/">
+        
+          <span class="site-state-item-count">18</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+            <a href="/categories/">
+          
+        <span class="site-state-item-count">5</span>
+        <span class="site-state-item-name">分类</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+            <a href="/tags/">
+          
+        <span class="site-state-item-count">17</span>
+        <span class="site-state-item-name">标签</span></a>
+      </div>
+  </nav>
+</div>
+  <div class="links-of-author motion-element">
+      <span class="links-of-author-item">
+        <a href="https://github.com/LimOkii" title="GitHub → https:&#x2F;&#x2F;github.com&#x2F;LimOkii" rel="noopener" target="_blank"><i class="fa fa-fw fa-github"></i>GitHub</a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="mailto:lyfei1126@gmail.com" title="E-Mail → mailto:lyfei1126@gmail.com" rel="noopener" target="_blank"><i class="fa fa-fw fa-envelope"></i>E-Mail</a>
+      </span>
+  </div>
+
+
+
+      </div>
+
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        
+
+        
+
+<div class="copyright">
+  
+  &copy; 
+  <span itemprop="copyrightYear">2024</span>
+  <span class="with-love">
+    <i class="fa fa-user"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">Okii</span>
+</div>
+  <div class="powered-by">由 <a href="https://hexo.io/" class="theme-link" rel="noopener" target="_blank">Hexo</a> & <a href="https://pisces.theme-next.org/" class="theme-link" rel="noopener" target="_blank">NexT.Pisces</a> 强力驱动
+  </div>
+
+        
+
+
+
+
+
+
+
+
+      </div>
+    </footer>
+  </div>
+
+  
+  <script src="/lib/anime.min.js"></script>
+  <script src="/lib/velocity/velocity.min.js"></script>
+  <script src="/lib/velocity/velocity.ui.min.js"></script>
+
+<script src="/js/utils.js"></script>
+
+<script src="/js/motion.js"></script>
+
+
+<script src="/js/schemes/pisces.js"></script>
+
+
+<script src="/js/next-boot.js"></script>
+
+
+
+
+  
+
+
+
+
+  
+<script src="/js/local-search.js"></script>
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+
+</body>
+</html>
