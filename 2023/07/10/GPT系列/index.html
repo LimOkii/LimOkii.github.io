@@ -1,0 +1,590 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 7.0.0">
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/logo.jpg">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/logo.jpg">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/logo.jpg">
+  <link rel="mask-icon" href="/images/logo.jpg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+<link rel="stylesheet" href="/lib/font-awesome/css/font-awesome.min.css">
+
+<script id="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"limokii.github.io","root":"/","scheme":"Pisces","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":false,"show_result":false,"style":null},"back2top":{"enable":true,"sidebar":false,"scrollpercent":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},"path":"search.xml"};
+  </script>
+
+  <meta name="description" content="本章是GPT系列模型概述，比较简略，涵盖GPT-1、GPT-2、GPT-3">
+<meta property="og:type" content="article">
+<meta property="og:title" content="GPT系列模型">
+<meta property="og:url" content="https://limokii.github.io/2023/07/10/GPT%E7%B3%BB%E5%88%97/index.html">
+<meta property="og:site_name" content="Okii&#39;s blog">
+<meta property="og:description" content="本章是GPT系列模型概述，比较简略，涵盖GPT-1、GPT-2、GPT-3">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="https://limokii.github.io/2023/07/10/GPT%E7%B3%BB%E5%88%97/gpt3.jpg">
+<meta property="og:image" content="https://limokii.github.io/2023/07/10/GPT%E7%B3%BB%E5%88%97/gpt6.png">
+<meta property="og:image" content="https://limokii.github.io/2023/07/10/GPT%E7%B3%BB%E5%88%97/gpt1.jpg">
+<meta property="og:image" content="https://limokii.github.io/2023/07/10/GPT%E7%B3%BB%E5%88%97/gpt2.jpg">
+<meta property="og:image" content="https://limokii.github.io/2023/07/10/GPT%E7%B3%BB%E5%88%97/gpt8.png">
+<meta property="article:published_time" content="2023-07-10T15:12:11.000Z">
+<meta property="article:modified_time" content="2024-04-30T15:06:13.645Z">
+<meta property="article:author" content="Okii">
+<meta property="article:tag" content="GPT">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://limokii.github.io/2023/07/10/GPT%E7%B3%BB%E5%88%97/gpt3.jpg">
+
+<link rel="canonical" href="https://limokii.github.io/2023/07/10/GPT%E7%B3%BB%E5%88%97/">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome : false,
+    isPost : true,
+    lang   : 'zh-CN'
+  };
+</script>
+
+  <title>GPT系列模型 | Okii's blog</title>
+  
+
+
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="container use-motion">
+    <div class="headband"></div>
+
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="切换导航栏">
+      <span class="toggle-line toggle-line-first"></span>
+      <span class="toggle-line toggle-line-middle"></span>
+      <span class="toggle-line toggle-line-last"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <span class="logo-line-before"><i></i></span>
+      <h1 class="site-title">Okii's blog</h1>
+      <span class="logo-line-after"><i></i></span>
+    </a>
+      <p class="site-subtitle" itemprop="description">仅作为记录自己的学习过程</p>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+        <i class="fa fa-search fa-fw fa-lg"></i>
+    </div>
+  </div>
+</div>
+
+
+
+
+<nav class="site-nav">
+  <ul id="menu" class="menu">
+        <li class="menu-item menu-item-home">
+
+    <a href="/" rel="section"><i class="fa fa-fw fa-home"></i>首页</a>
+
+  </li>
+        <li class="menu-item menu-item-tags">
+
+    <a href="/tags/" rel="section"><i class="fa fa-fw fa-tags"></i>标签<span class="badge">23</span></a>
+
+  </li>
+        <li class="menu-item menu-item-categories">
+
+    <a href="/categories/" rel="section"><i class="fa fa-fw fa-th"></i>分类<span class="badge">5</span></a>
+
+  </li>
+        <li class="menu-item menu-item-archives">
+
+    <a href="/archives/" rel="section"><i class="fa fa-fw fa-archive"></i>归档<span class="badge">23</span></a>
+
+  </li>
+      <li class="menu-item menu-item-search">
+        <a role="button" class="popup-trigger"><i class="fa fa-search fa-fw"></i>搜索
+        </a>
+      </li>
+  </ul>
+</nav>
+
+
+
+  <div class="search-pop-overlay">
+    <div class="popup search-popup">
+        <div class="search-header">
+  <span class="search-icon">
+    <i class="fa fa-search"></i>
+  </span>
+  <div class="search-input-container">
+    <input autocomplete="off" autocapitalize="off"
+           placeholder="搜索..." spellcheck="false"
+           type="search" class="search-input">
+  </div>
+  <span class="popup-btn-close">
+    <i class="fa fa-times-circle"></i>
+  </span>
+</div>
+<div id="search-result">
+  <div id="no-result">
+    <i class="fa fa-spinner fa-pulse fa-5x fa-fw"></i>
+  </div>
+</div>
+
+    </div>
+  </div>
+
+</div>
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+
+
+    <main class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+
+          <div class="content post posts-expand">
+            
+
+    
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="https://limokii.github.io/2023/07/10/GPT%E7%B3%BB%E5%88%97/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.jpg">
+      <meta itemprop="name" content="Okii">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Okii's blog">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          GPT系列模型
+        </h1>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+
+              <time title="创建时间：2023-07-10 23:12:11" itemprop="dateCreated datePublished" datetime="2023-07-10T23:12:11+08:00">2023-07-10</time>
+            </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/%E8%AE%BA%E6%96%87/" itemprop="url" rel="index"><span itemprop="name">论文</span></a>
+                </span>
+            </span>
+
+          <br>
+            <span class="post-meta-item" title="本文字数">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-file-word-o"></i>
+              </span>
+                <span class="post-meta-item-text">本文字数：</span>
+              <span>1.5k</span>
+            </span>
+            <span class="post-meta-item" title="阅读时长">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-clock-o"></i>
+              </span>
+                <span class="post-meta-item-text">阅读时长 &asymp;</span>
+              <span>3 分钟</span>
+            </span>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        <p>本章是GPT系列模型概述，比较简略，涵盖GPT-1、GPT-2、GPT-3</p>
+<span id="more"></span>
+<h2 id="一、前言"><a href="#一、前言" class="headerlink" title="一、前言"></a>一、前言</h2><p>​		GPT 系列是 OpenAI 的一系列预训练模型，全称是 Generative Pre-Trained Transformer</p>
+<p>​		GPT的想法非常简单，因为在NLP中有相当多种类的任务，尽管有大量的未标注数据，但用于指定任务的标注过的数据却很少，这不能很好地评判已训练过的模型性能。 GPT尝试用一种通用，<strong>任务无关</strong>的模型结构解决所有NLP问题。对于不同的任务，只需要在无监督的预训练后进行有监督的微调就行了，这与CV界的Transfer Learning相同。</p>
+<p>​		ps:GPT系列的模型结构秉承了不断堆叠Transformer的思想，通过不断的提升训练语料的规模和质量，提升网络的参数数量来完成GPT系列的迭代更新的。GPT也证明了，通过不断的提升模型容量和语料规模，模型的能力是可以不断提升的。</p>
+<table>
+<thead>
+<tr>
+<th>模型</th>
+<th>发布时间</th>
+<th>参数量</th>
+<th>预训练数据量</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>GPT</td>
+<td>2018 年 6 月</td>
+<td>1.17 亿</td>
+<td>约 5GB</td>
+</tr>
+<tr>
+<td>GPT-2</td>
+<td>2019 年 2 月</td>
+<td>15 亿</td>
+<td>40GB</td>
+</tr>
+<tr>
+<td>GPT-3</td>
+<td>2020 年 5 月</td>
+<td>1,750 亿</td>
+<td>45TB</td>
+</tr>
+</tbody></table>
+<h2 id="二、GPT-1"><a href="#二、GPT-1" class="headerlink" title="二、GPT-1"></a>二、GPT-1</h2><p><img src="/2023/07/10/GPT%E7%B3%BB%E5%88%97/gpt3.jpg" alt="gpt3"></p>
+<p>在GPT一代中，采用了12个Decoder堆叠</p>
+<p>输入是：Token Embedding + Positional Embedding </p>
+<p>Positional Embedding不再是正余弦固定的位置向量，而是采用与词向量相似的随机初始化，并可以在训练中进行更新</p>
+<p><img src="/2023/07/10/GPT%E7%B3%BB%E5%88%97/gpt6.png" alt="gpt6"></p>
+<h3 id="第一阶段：无监督预训练"><a href="#第一阶段：无监督预训练" class="headerlink" title="第一阶段：无监督预训练"></a>第一阶段：无监督预训练</h3><p>采用标准语言模型，即通过上文预测当前的词</p>
+<h3 id="第二阶段：有监督微调"><a href="#第二阶段：有监督微调" class="headerlink" title="第二阶段：有监督微调"></a>第二阶段：有监督微调</h3><img src="/2023/07/10/GPT%E7%B3%BB%E5%88%97/gpt1.jpg" alt="gpt1" style="zoom: 67%;">
+
+<p>针对不同的下游任务，需要对输入进行转换，从而能够适应 GPT-1 模型结构</p>
+<p>原论文在下游任务微调时，除了当前任务的Loss，还加入了预训练阶段语言模型下一个词预测的Loss，实验结果表明效果更好</p>
+<ul>
+<li><p><strong>分类任务</strong> 只需要在输入序列前后分别加上开始（Start）和结束（Extract）标记</p>
+</li>
+<li><p><strong>句子关系任务</strong> 除了开始和结束标记，在两个句子中间还需要加上分隔符（Delim）</p>
+</li>
+<li><p>**文本相似性任务 **与句子关系判断任务相似，不同的是需要交换两文本顺序并生成两个文本表示add起来</p>
+</li>
+<li><p><strong>多项选择任务</strong> 文本相似任务的扩展，两个文本扩展为多个文本</p>
+</li>
+</ul>
+<p>都拿最后的<code>Extract</code>去做Linear的label预测</p>
+<p><img src="/2023/07/10/GPT%E7%B3%BB%E5%88%97/gpt2.jpg" alt="img"></p>
+<h2 id="三、GPT-2"><a href="#三、GPT-2" class="headerlink" title="三、GPT-2"></a>三、GPT-2</h2><p><img src="/2023/07/10/GPT%E7%B3%BB%E5%88%97/gpt8.png" alt="img"></p>
+<p>BERT用12层编码器效果比GPT-1好，GPT作者不服，他也整的模型更大、数据集更大</p>
+<p>但面临的问题可能是，效果仍然比不上BERT，另辟蹊径提出zero-shot能力</p>
+<ul>
+<li>同样使用了使用字节对编码构建字典，字典的大小为 50,257 ；</li>
+<li>滑动窗口的大小为 1,024 ；</li>
+<li>batchsize的大小为 512 ；</li>
+<li>Layer Normalization移动到了每一块的输入部分，在每个self-attention之后额外添加了一个Layer Normalization；</li>
+</ul>
+<p><strong>1代与2代的区别</strong></p>
+<p>1、用了更大的数据集, 尤其是网页文本, 40G</p>
+<p>2、增加了海量参数，并推出了几个不同的版本，一个比一个大，除了使用的Decoder个数不同，它们的Embedding维度也是不同的</p>
+<p>3、直接去掉了微调层,，直接输入任务和所需的内容就能得到输出</p>
+<p>4、Layer Normalization移动到了每一块的输入部分，在每个self-attention之后额外添加了一个Layer Normalization</p>
+<table>
+<thead>
+<tr>
+<th>参数量</th>
+<th>层数</th>
+<th>词向量长度</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>117M（GPT-1）</td>
+<td>12</td>
+<td>768</td>
+</tr>
+<tr>
+<td>345M</td>
+<td>24</td>
+<td>1024</td>
+</tr>
+<tr>
+<td>762M</td>
+<td>36</td>
+<td>1280</td>
+</tr>
+<tr>
+<td>1542M</td>
+<td>48</td>
+<td>1600</td>
+</tr>
+</tbody></table>
+<h2 id="四、GPT-3"><a href="#四、GPT-3" class="headerlink" title="四、GPT-3"></a>四、GPT-3</h2><p>没什么特别大的创新，就是烧钱</p>
+<p>模型更大、数据更大，能力更强</p>
+<p>开始强调Zero-Shot、Few-Shot能力</p>
+<p>效果惊艳</p>
+
+    </div>
+
+    
+    
+    
+        
+
+<div>
+<ul class="post-copyright">
+  <li class="post-copyright-author">
+    <strong>本文作者： </strong>Okii
+  </li>
+  <li class="post-copyright-link">
+    <strong>本文链接：</strong>
+    <a href="https://limokii.github.io/2023/07/10/GPT%E7%B3%BB%E5%88%97/" title="GPT系列模型">https://limokii.github.io/2023/07/10/GPT系列/</a>
+  </li>
+  <li class="post-copyright-license">
+    <strong>版权声明： </strong>本博客所有文章除特别声明外，均采用 <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/" rel="noopener" target="_blank"><i class="fa fa-fw fa-creative-commons"></i>BY-NC-SA</a> 许可协议。转载请注明出处！
+  </li>
+</ul>
+</div>
+
+
+      <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/tags/GPT/" rel="tag"># GPT</a>
+          </div>
+
+        
+
+
+        
+    <div class="post-nav">
+      <div class="post-nav-item">
+    <a href="/2023/07/10/LLaMa%E7%B3%BB%E5%88%97/" rel="prev" title="LLaMA系列模型">
+      <i class="fa fa-chevron-left"></i> LLaMA系列模型
+    </a></div>
+      <div class="post-nav-item">
+    <a href="/2023/07/15/ChatGLM/" rel="next" title="ChatGLM系列模型">
+      ChatGLM系列模型 <i class="fa fa-chevron-right"></i>
+    </a></div>
+    </div>
+      </footer>
+    
+  </article>
+  
+  
+  
+
+
+
+          </div>
+          
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let { activeClass } = CONFIG.comments;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      let activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      let commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+        </div>
+          
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          文章目录
+        </li>
+        <li class="sidebar-nav-overview">
+          站点概览
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#%E4%B8%80%E3%80%81%E5%89%8D%E8%A8%80"><span class="nav-text">一、前言</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E4%BA%8C%E3%80%81GPT-1"><span class="nav-text">二、GPT-1</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E7%AC%AC%E4%B8%80%E9%98%B6%E6%AE%B5%EF%BC%9A%E6%97%A0%E7%9B%91%E7%9D%A3%E9%A2%84%E8%AE%AD%E7%BB%83"><span class="nav-text">第一阶段：无监督预训练</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E7%AC%AC%E4%BA%8C%E9%98%B6%E6%AE%B5%EF%BC%9A%E6%9C%89%E7%9B%91%E7%9D%A3%E5%BE%AE%E8%B0%83"><span class="nav-text">第二阶段：有监督微调</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E4%B8%89%E3%80%81GPT-2"><span class="nav-text">三、GPT-2</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%9B%9B%E3%80%81GPT-3"><span class="nav-text">四、GPT-3</span></a></li></ol></div>
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+    <img class="site-author-image" itemprop="image" alt="Okii"
+      src="/images/avatar.jpg">
+  <p class="site-author-name" itemprop="name">Okii</p>
+  <div class="site-description" itemprop="description"></div>
+</div>
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/archives/">
+        
+          <span class="site-state-item-count">23</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+            <a href="/categories/">
+          
+        <span class="site-state-item-count">5</span>
+        <span class="site-state-item-name">分类</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+            <a href="/tags/">
+          
+        <span class="site-state-item-count">23</span>
+        <span class="site-state-item-name">标签</span></a>
+      </div>
+  </nav>
+</div>
+  <div class="links-of-author motion-element">
+      <span class="links-of-author-item">
+        <a href="https://github.com/LimOkii" title="GitHub → https:&#x2F;&#x2F;github.com&#x2F;LimOkii" rel="noopener" target="_blank"><i class="fa fa-fw fa-github"></i>GitHub</a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="mailto:lyfei1126@gmail.com" title="E-Mail → mailto:lyfei1126@gmail.com" rel="noopener" target="_blank"><i class="fa fa-fw fa-envelope"></i>E-Mail</a>
+      </span>
+  </div>
+
+
+
+      </div>
+
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        
+
+        
+
+<div class="copyright">
+  
+  &copy; 
+  <span itemprop="copyrightYear">2024</span>
+  <span class="with-love">
+    <i class="fa fa-user"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">Okii</span>
+</div>
+  <div class="powered-by">由 <a href="https://hexo.io/" class="theme-link" rel="noopener" target="_blank">Hexo</a> & <a href="https://pisces.theme-next.org/" class="theme-link" rel="noopener" target="_blank">NexT.Pisces</a> 强力驱动
+  </div>
+
+        
+
+
+
+
+
+
+
+
+      </div>
+    </footer>
+  </div>
+
+  
+  <script src="/lib/anime.min.js"></script>
+  <script src="/lib/velocity/velocity.min.js"></script>
+  <script src="/lib/velocity/velocity.ui.min.js"></script>
+
+<script src="/js/utils.js"></script>
+
+<script src="/js/motion.js"></script>
+
+
+<script src="/js/schemes/pisces.js"></script>
+
+
+<script src="/js/next-boot.js"></script>
+
+
+
+
+  
+
+
+
+
+  
+<script src="/js/local-search.js"></script>
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+
+</body>
+</html>
