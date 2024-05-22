@@ -1,0 +1,546 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 7.0.0">
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/logo.jpg">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/logo.jpg">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/logo.jpg">
+  <link rel="mask-icon" href="/images/logo.jpg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+<link rel="stylesheet" href="/lib/font-awesome/css/font-awesome.min.css">
+
+<script id="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"limokii.github.io","root":"/","scheme":"Pisces","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":false,"show_result":false,"style":null},"back2top":{"enable":true,"sidebar":false,"scrollpercent":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},"path":"search.xml"};
+  </script>
+
+  <meta name="description" content="本章介绍LLM的并行优化，包括数据并行、流水线并行，以及DeepSpeed分布式架构的做法">
+<meta property="og:type" content="article">
+<meta property="og:title" content="LLM的并行优化">
+<meta property="og:url" content="https://limokii.github.io/2024/03/01/LLM%E4%B9%8B%E5%B9%B6%E8%A1%8C%E4%BC%98%E5%8C%96/index.html">
+<meta property="og:site_name" content="Okii&#39;s blog">
+<meta property="og:description" content="本章介绍LLM的并行优化，包括数据并行、流水线并行，以及DeepSpeed分布式架构的做法">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="https://limokii.github.io/2024/03/01/LLM%E4%B9%8B%E5%B9%B6%E8%A1%8C%E4%BC%98%E5%8C%96/image-20240407190441116.png">
+<meta property="og:image" content="https://limokii.github.io/2024/03/01/LLM%E4%B9%8B%E5%B9%B6%E8%A1%8C%E4%BC%98%E5%8C%96/v2-fb362764a025bdcbfa4edf0ade4d41bd_r.jpg">
+<meta property="og:image" content="https://limokii.github.io/2024/03/01/LLM%E4%B9%8B%E5%B9%B6%E8%A1%8C%E4%BC%98%E5%8C%96/image-20240407201853497.png">
+<meta property="og:image" content="https://limokii.github.io/2024/03/01/LLM%E4%B9%8B%E5%B9%B6%E8%A1%8C%E4%BC%98%E5%8C%96/image-20240407201737858.png">
+<meta property="og:image" content="https://limokii.github.io/2024/03/01/LLM%E4%B9%8B%E5%B9%B6%E8%A1%8C%E4%BC%98%E5%8C%96/lmparallel8.png">
+<meta property="article:published_time" content="2024-03-01T15:12:11.000Z">
+<meta property="article:modified_time" content="2024-05-21T12:32:05.065Z">
+<meta property="article:author" content="Okii">
+<meta property="article:tag" content="LLM">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://limokii.github.io/2024/03/01/LLM%E4%B9%8B%E5%B9%B6%E8%A1%8C%E4%BC%98%E5%8C%96/image-20240407190441116.png">
+
+<link rel="canonical" href="https://limokii.github.io/2024/03/01/LLM%E4%B9%8B%E5%B9%B6%E8%A1%8C%E4%BC%98%E5%8C%96/">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome : false,
+    isPost : true,
+    lang   : 'zh-CN'
+  };
+</script>
+
+  <title>LLM的并行优化 | Okii's blog</title>
+  
+
+
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="container use-motion">
+    <div class="headband"></div>
+
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="切换导航栏">
+      <span class="toggle-line toggle-line-first"></span>
+      <span class="toggle-line toggle-line-middle"></span>
+      <span class="toggle-line toggle-line-last"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <span class="logo-line-before"><i></i></span>
+      <h1 class="site-title">Okii's blog</h1>
+      <span class="logo-line-after"><i></i></span>
+    </a>
+      <p class="site-subtitle" itemprop="description">仅作为记录自己的学习过程</p>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+        <i class="fa fa-search fa-fw fa-lg"></i>
+    </div>
+  </div>
+</div>
+
+
+
+
+<nav class="site-nav">
+  <ul id="menu" class="menu">
+        <li class="menu-item menu-item-home">
+
+    <a href="/" rel="section"><i class="fa fa-fw fa-home"></i>首页</a>
+
+  </li>
+        <li class="menu-item menu-item-tags">
+
+    <a href="/tags/" rel="section"><i class="fa fa-fw fa-tags"></i>标签<span class="badge">28</span></a>
+
+  </li>
+        <li class="menu-item menu-item-categories">
+
+    <a href="/categories/" rel="section"><i class="fa fa-fw fa-th"></i>分类<span class="badge">6</span></a>
+
+  </li>
+        <li class="menu-item menu-item-archives">
+
+    <a href="/archives/" rel="section"><i class="fa fa-fw fa-archive"></i>归档<span class="badge">32</span></a>
+
+  </li>
+      <li class="menu-item menu-item-search">
+        <a role="button" class="popup-trigger"><i class="fa fa-search fa-fw"></i>搜索
+        </a>
+      </li>
+  </ul>
+</nav>
+
+
+
+  <div class="search-pop-overlay">
+    <div class="popup search-popup">
+        <div class="search-header">
+  <span class="search-icon">
+    <i class="fa fa-search"></i>
+  </span>
+  <div class="search-input-container">
+    <input autocomplete="off" autocapitalize="off"
+           placeholder="搜索..." spellcheck="false"
+           type="search" class="search-input">
+  </div>
+  <span class="popup-btn-close">
+    <i class="fa fa-times-circle"></i>
+  </span>
+</div>
+<div id="search-result">
+  <div id="no-result">
+    <i class="fa fa-spinner fa-pulse fa-5x fa-fw"></i>
+  </div>
+</div>
+
+    </div>
+  </div>
+
+</div>
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+
+
+    <main class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+
+          <div class="content post posts-expand">
+            
+
+    
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="https://limokii.github.io/2024/03/01/LLM%E4%B9%8B%E5%B9%B6%E8%A1%8C%E4%BC%98%E5%8C%96/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.jpg">
+      <meta itemprop="name" content="Okii">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Okii's blog">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          LLM的并行优化
+        </h1>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+
+              <time title="创建时间：2024-03-01 23:12:11" itemprop="dateCreated datePublished" datetime="2024-03-01T23:12:11+08:00">2024-03-01</time>
+            </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/%E7%9F%A5%E8%AF%86%E7%82%B9%E7%A7%AF%E7%B4%AF/" itemprop="url" rel="index"><span itemprop="name">知识点积累</span></a>
+                </span>
+            </span>
+
+          <br>
+            <span class="post-meta-item" title="本文字数">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-file-word-o"></i>
+              </span>
+                <span class="post-meta-item-text">本文字数：</span>
+              <span>2.9k</span>
+            </span>
+            <span class="post-meta-item" title="阅读时长">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-clock-o"></i>
+              </span>
+                <span class="post-meta-item-text">阅读时长 &asymp;</span>
+              <span>5 分钟</span>
+            </span>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        <p>本章介绍LLM的并行优化，包括数据并行、流水线并行，以及DeepSpeed分布式架构的做法</p>
+<span id="more"></span>
+<h2 id="一、前言"><a href="#一、前言" class="headerlink" title="一、前言"></a>一、前言</h2><p>如今LLM盛行，但是大意味着显存吃不消、训练速度也吃不消</p>
+<p>并且随着模型的巨型化，中间过程保存的变量以及参数成为负担</p>
+<p>并且对于分布式训练来说，机器之间的通信成本也不可忽视</p>
+<p>本章主要介绍当前经典的分布式并行优化策略：</p>
+<ul>
+<li>数据并行(Data Parallelism)</li>
+<li>流水线并行(Pipeline Parallelism)</li>
+<li>张量并行(Tensor Parallelism)</li>
+</ul>
+<h2 id="二、数据并行"><a href="#二、数据并行" class="headerlink" title="二、数据并行"></a>二、数据并行</h2><p>数据并行(DP)是直接在Batch的维度上进行划分, 将多个Batch拆分到多个节点上进行计算</p>
+<h3 id="2-1-参数服务器-Parameter-Server"><a href="#2-1-参数服务器-Parameter-Server" class="headerlink" title="2.1 参数服务器 Parameter Server"></a>2.1 参数服务器 Parameter Server</h3><p>数据并行最经典的例子是参数服务器(Server), 会在每个节点(Wokrer)上都存储同一份模型, 然后将Batch下放到每个不同的Wokrer上, 完成Forward和Backward, 最后将每个Wokrer算完的梯度回传到一个参数服务器上, 由参数服务器聚合各节点的梯度, 再将聚合后的梯度 &#x2F; 新的模型参数 <strong>广播</strong>到各个Wokrer上:</p>
+<img src="/2024/03/01/LLM%E4%B9%8B%E5%B9%B6%E8%A1%8C%E4%BC%98%E5%8C%96/image-20240407190441116.png" alt="image-20240407190441116" style="zoom:80%;">
+
+<p>各个计算节点(Wokrer) 将梯度上传到参数服务器之后, 参数服务器可能会有两种实现:</p>
+<p>1、参数服务器计算平均梯度(或加权梯度), 并代替各Worker完成模型参数更新, 之后将参数下放到各计算节点中</p>
+<p>2、参数服务器仅仅计算平均梯度(或加权梯度), 但不更新模型参数, 而是将计算完的梯度下放到各个Worker当中, 由各个节点自主更新各节点上的模型参数</p>
+<p><strong>聚合梯度外加下放梯度这个过程, 被称为”AllReduce“</strong></p>
+<p>由于计算体系内的带宽各不同, 主要考虑AllReduce的开销, 不同的参数服务器聚合方式可能会产生不同的耗时.</p>
+<p>数据并行在每个Worker上都存放了一份模型参数, 所以其实造成了大量冗余, 并且Server需要向每个Worker都传输一份梯度 &#x2F; 模型参数.</p>
+<p>所以, 每当Worker在接收参数或者梯度的时候, 一直在空转, 造成了利用率不高. 为了避免这种情况, 可以将梯度异步更新, 让Worker拿旧的模型参数来跑新的数据, 但是异步也不能太异步, 可以设定一个延迟步数来保证权重不会太久没有发生更新.</p>
+<p>异步更新由于拿到的梯度不稳定, 会减缓收敛速度, 发散的风险也提高了</p>
+<h3 id="2-2-Ring—AllReduce"><a href="#2-2-Ring—AllReduce" class="headerlink" title="2.2 Ring—AllReduce"></a><strong>2.2 Ring—AllReduce</strong></h3><p>Pytorch的分布式数据并行(DDP)用的就是这种实现方式, 用于多机训练场景</p>
+<p>数据并行最大的缺点是在AllReduce时，每一个节点都要要与参数服务器互相通信</p>
+<p>Ring-AllReduce将该过程拆分为两个部分, <strong>Reduce - Scatter</strong>和<strong>All - Gather</strong>.</p>
+<p><img src="/2024/03/01/LLM%E4%B9%8B%E5%B9%B6%E8%A1%8C%E4%BC%98%E5%8C%96/v2-fb362764a025bdcbfa4edf0ade4d41bd_r.jpg" alt="img"></p>
+<p>对于一个大Batch，比如有16份数据，4块GPU</p>
+<p>那么每块GPU上分到4份数据</p>
+<p>比如每块GPU算完其中1份数据后，就可以进行梯度的传递，是在拓扑环中向右侧传递</p>
+<p>传递时，每块GPU上的梯度是累加，传递N-1也就是3次后，每块GPU中有小一份来自各个服务器完整的梯度</p>
+<p>以上是 <strong>Reduce - Scatter</strong>部分</p>
+<p>接着，每个GPU把各自完整的梯度，直接覆盖到下一个GPU上，传递N-1也就是3次后，每个GPU上都得到了完整数据的梯度，最后做更新</p>
+<p>以上是<strong>All - Gather</strong>部分</p>
+<h2 id="三、模型并行"><a href="#三、模型并行" class="headerlink" title="三、模型并行"></a>三、模型并行</h2><p>如果模型很大，一块卡装不下的时候，就要考虑把模型上的各个部分拆开到GPU上</p>
+<h3 id="3-1-流水线并行"><a href="#3-1-流水线并行" class="headerlink" title="3.1 流水线并行"></a>3.1 流水线并行</h3><p>最简单的，按模型的层去拆</p>
+<p>流水线并行也可以被看做是<strong>层间并行</strong>。把模型的所有层分成多份, <strong>分别拆到每块GPU去算</strong>。但是这样在Forward和Backward时都会有问题, 由于模型Forward是顺序串行的, 所以Forward和Backward也是顺序串行的。</p>
+<p>即使是这样做了, 串行导致GPU<strong>利用率</strong>很低, 大部分时间在空转</p>
+<p><img src="/2024/03/01/LLM%E4%B9%8B%E5%B9%B6%E8%A1%8C%E4%BC%98%E5%8C%96/image-20240407201853497.png" alt="image-20240407201853497"></p>
+<p>其中一种缓解的方法, 就是把数据并行也引入。把所有数据再划分为若干个Batch给到GPU训练, 之前的Batch叫做Mini Batch, 那再次划分的Batch叫做<strong>Micro Batch</strong>。</p>
+<p>在引入Micro Batch以后, 每个GPU可以直接进行<strong>流水线作业</strong>, 将自己的计算结果提交到模型下一层对应的GPU中, 然后再计算下一个Micro Batch的梯度</p>
+<p><img src="/2024/03/01/LLM%E4%B9%8B%E5%B9%B6%E8%A1%8C%E4%BC%98%E5%8C%96/image-20240407201737858.png" alt="image-20240407201737858"></p>
+<h3 id="3-2-ZeRO"><a href="#3-2-ZeRO" class="headerlink" title="3.2 ZeRO"></a>3.2 ZeRO</h3><p>微软的ZeRO解决了显存上的困难. ZeRO全称为<strong>Ze</strong>ro <strong>R</strong>edundancy <strong>O</strong>ptimizer, 从名字上来看就主要是解决的显存开销, Zero Redundancy.</p>
+<p>很多States在自己的大多数时间内, 都不会被一直使用, 而是一直拿着, 直到某个被调用的一刻才会用到。ZeRO对这部分States做了优化, <strong>用到时再拿</strong>, 而不是一直在每块GPU上拿着</p>
+<p><strong>ZeRO Stage 1</strong></p>
+<p>1、每块GPU上存一份完整的参数W。将一个batch的数据分成3份，每块GPU各吃一份，做完一轮foward和backward后，各得一份梯度</p>
+<p>2、对梯度做一次<strong>AllReduce</strong>，得到<strong>完整的梯度G</strong></p>
+<p>3、得到完整梯度G，就可以对W做更新。而道W的更新由optimizer states和梯度共同决定。由于每块GPU上只保管部分optimizer states，因此只能将相应的W进行更新</p>
+<p>4、此时，每块GPU上都有部分W没有完成更新。所以我们需要对W做一次<strong>All-Gather</strong>，从别的GPU上把更新好的部分W取回来</p>
+<p><strong>ZeRO Stage 2</strong></p>
+<p>现在，更近一步，我们把梯度也拆开，每个GPU格子维护一块梯度</p>
+<p>此时，数据并行的整体流程如下：<br>1、每块GPU上存一份完整的参数W。将一个batch的数据分成3份，每块GPU各吃一份，做完一轮foward和backward后，<strong>算得一份完整的梯度</strong></p>
+<p>2、对梯度做一次<strong>Reduce-Scatter</strong>，保证每个GPU上所维持的那块梯度是聚合梯度。例如对GPU1，它负责维护G1，因此其他的GPU只需要把G1对应位置的梯度发给GPU1做加总即可</p>
+<p>3、每块GPU用自己对应的O和G去更新相应的W。更新完毕后，<strong>每块GPU维持了一块更新完毕的W</strong>。同理，对W做一次<strong>All-Gather</strong>，将别的GPU算好的W同步到自己这来</p>
+<p><strong>ZeRO Stage 3</strong></p>
+<p>看到这里，也许你有点感觉了，<strong>ZeRO的思想就是：万物皆可切，万物皆可抛</strong>。所以现在，我们把参数也切开。每块GPU置维持对应的optimizer states，gradients和parameters（即W）</p>
+<p>数据并行的流程如下：<br>1、每块GPU上只保存部分参数W。将一个batch的数据分成3份，每块GPU各吃一份。<br>2、做forward时，对W做一次<strong>All-Gather</strong>，取回分布在别的GPU上的W，得到一份完整的W，单卡通讯量 Φ <strong>。forward做完，立刻把不是自己维护的W抛弃。</strong><br>3、做backward时，对W做一次<strong>All-Gather</strong>，取回完整的W。backward做完，立刻把不是自己维护的W抛弃。<br>4、做完backward，算得一份完整的梯度G，对G做一次<strong>Reduce-Scatter</strong>，从别的GPU上聚合自己维护的那部分梯度，单卡通讯量 Φ <strong>。聚合操作结束后，立刻把不是自己维护的G抛弃</strong>。<br>5、用自己维护的O和G，更新W。由于只维护部分W，因此无需再对W做任何AllReduce操作</p>
+<p><img src="/2024/03/01/LLM%E4%B9%8B%E5%B9%B6%E8%A1%8C%E4%BC%98%E5%8C%96/lmparallel8.png" alt="img"></p>
+
+    </div>
+
+    
+    
+    
+        
+
+<div>
+<ul class="post-copyright">
+  <li class="post-copyright-author">
+    <strong>本文作者： </strong>Okii
+  </li>
+  <li class="post-copyright-link">
+    <strong>本文链接：</strong>
+    <a href="https://limokii.github.io/2024/03/01/LLM%E4%B9%8B%E5%B9%B6%E8%A1%8C%E4%BC%98%E5%8C%96/" title="LLM的并行优化">https://limokii.github.io/2024/03/01/LLM之并行优化/</a>
+  </li>
+  <li class="post-copyright-license">
+    <strong>版权声明： </strong>本博客所有文章除特别声明外，均采用 <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/" rel="noopener" target="_blank"><i class="fa fa-fw fa-creative-commons"></i>BY-NC-SA</a> 许可协议。转载请注明出处！
+  </li>
+</ul>
+</div>
+
+
+      <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/tags/LLM/" rel="tag"># LLM</a>
+          </div>
+
+        
+
+
+        
+    <div class="post-nav">
+      <div class="post-nav-item">
+    <a href="/2024/02/20/%E5%9B%9E%E6%BA%AF%E2%80%94%E2%80%94%E5%85%A8%E6%8E%92%E5%88%97/" rel="prev" title="Leetcode 回溯—排列篇">
+      <i class="fa fa-chevron-left"></i> Leetcode 回溯—排列篇
+    </a></div>
+      <div class="post-nav-item">
+    <a href="/2024/03/04/%E6%B7%B7%E5%90%88%E7%B2%BE%E5%BA%A6/" rel="next" title="混合精度">
+      混合精度 <i class="fa fa-chevron-right"></i>
+    </a></div>
+    </div>
+      </footer>
+    
+  </article>
+  
+  
+  
+
+
+
+          </div>
+          
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let { activeClass } = CONFIG.comments;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      let activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      let commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+        </div>
+          
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          文章目录
+        </li>
+        <li class="sidebar-nav-overview">
+          站点概览
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#%E4%B8%80%E3%80%81%E5%89%8D%E8%A8%80"><span class="nav-text">一、前言</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E4%BA%8C%E3%80%81%E6%95%B0%E6%8D%AE%E5%B9%B6%E8%A1%8C"><span class="nav-text">二、数据并行</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#2-1-%E5%8F%82%E6%95%B0%E6%9C%8D%E5%8A%A1%E5%99%A8-Parameter-Server"><span class="nav-text">2.1 参数服务器 Parameter Server</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#2-2-Ring%E2%80%94AllReduce"><span class="nav-text">2.2 Ring—AllReduce</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E4%B8%89%E3%80%81%E6%A8%A1%E5%9E%8B%E5%B9%B6%E8%A1%8C"><span class="nav-text">三、模型并行</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#3-1-%E6%B5%81%E6%B0%B4%E7%BA%BF%E5%B9%B6%E8%A1%8C"><span class="nav-text">3.1 流水线并行</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#3-2-ZeRO"><span class="nav-text">3.2 ZeRO</span></a></li></ol></li></ol></div>
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+    <img class="site-author-image" itemprop="image" alt="Okii"
+      src="/images/avatar.jpg">
+  <p class="site-author-name" itemprop="name">Okii</p>
+  <div class="site-description" itemprop="description"></div>
+</div>
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/archives/">
+        
+          <span class="site-state-item-count">32</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+            <a href="/categories/">
+          
+        <span class="site-state-item-count">6</span>
+        <span class="site-state-item-name">分类</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+            <a href="/tags/">
+          
+        <span class="site-state-item-count">28</span>
+        <span class="site-state-item-name">标签</span></a>
+      </div>
+  </nav>
+</div>
+  <div class="links-of-author motion-element">
+      <span class="links-of-author-item">
+        <a href="https://github.com/LimOkii" title="GitHub → https:&#x2F;&#x2F;github.com&#x2F;LimOkii" rel="noopener" target="_blank"><i class="fa fa-fw fa-github"></i>GitHub</a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="mailto:lyfei1126@gmail.com" title="E-Mail → mailto:lyfei1126@gmail.com" rel="noopener" target="_blank"><i class="fa fa-fw fa-envelope"></i>E-Mail</a>
+      </span>
+  </div>
+
+
+
+      </div>
+
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        
+
+        
+
+<div class="copyright">
+  
+  &copy; 
+  <span itemprop="copyrightYear">2024</span>
+  <span class="with-love">
+    <i class="fa fa-user"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">Okii</span>
+</div>
+  <div class="powered-by">由 <a href="https://hexo.io/" class="theme-link" rel="noopener" target="_blank">Hexo</a> & <a href="https://pisces.theme-next.org/" class="theme-link" rel="noopener" target="_blank">NexT.Pisces</a> 强力驱动
+  </div>
+
+        
+
+
+
+
+
+
+
+
+      </div>
+    </footer>
+  </div>
+
+  
+  <script src="/lib/anime.min.js"></script>
+  <script src="/lib/velocity/velocity.min.js"></script>
+  <script src="/lib/velocity/velocity.ui.min.js"></script>
+
+<script src="/js/utils.js"></script>
+
+<script src="/js/motion.js"></script>
+
+
+<script src="/js/schemes/pisces.js"></script>
+
+
+<script src="/js/next-boot.js"></script>
+
+
+
+
+  
+
+
+
+
+  
+<script src="/js/local-search.js"></script>
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+
+</body>
+</html>
