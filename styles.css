@@ -228,6 +228,20 @@ img {
   margin-bottom: 10px;
 }
 
+.list-entry {
+  display: grid;
+  column-gap: 6px;
+  align-items: start;
+}
+
+.news-list .list-entry {
+  grid-template-columns: 5.5rem minmax(0, 1fr);
+}
+
+.bullet-list .list-entry {
+  grid-template-columns: 8.5rem minmax(0, 1fr);
+}
+
 .publication {
   margin-top: 18px;
   padding-bottom: 16px;
@@ -303,5 +317,11 @@ strong {
 
   .link-line span {
     margin: 0 6px;
+  }
+}
+
+@media (max-width: 480px) {
+  .bullet-list .list-entry {
+    grid-template-columns: minmax(0, 1fr);
   }
 }
