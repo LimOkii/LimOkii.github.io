@@ -2,3 +2,8 @@ __pycache__/
 *.py[cod]
 .DS_Store
 Thumbs.db
+assets/Tencent.png
+assets/qiantang_credit.png
+assets/meituan.png
+assets/deeplang.png
+assets/ailab.jpeg
