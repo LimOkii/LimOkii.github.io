@@ -231,20 +231,19 @@ img {
 .list-entry {
   display: grid;
   column-gap: 4px;
-  align-items: start;
+  align-items: baseline;
 }
 
 .list-entry strong {
-  font-size: 0.88em;
   white-space: nowrap;
 }
 
 .news-list .list-entry {
-  grid-template-columns: 5.5rem minmax(0, 1fr);
+  grid-template-columns: 6rem minmax(0, 1fr);
 }
 
 .bullet-list .list-entry {
-  grid-template-columns: 8.5rem minmax(0, 1fr);
+  grid-template-columns: 9.5rem minmax(0, 1fr);
 }
 
 .publication {
