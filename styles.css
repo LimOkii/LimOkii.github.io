@@ -230,8 +230,13 @@ img {
 
 .list-entry {
   display: grid;
-  column-gap: 6px;
+  column-gap: 4px;
   align-items: start;
+}
+
+.list-entry strong {
+  font-size: 0.88em;
+  white-space: nowrap;
 }
 
 .news-list .list-entry {
